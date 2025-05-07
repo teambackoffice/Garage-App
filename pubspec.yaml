@@ -1,0 +1,41 @@
+name: garage_app
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons:
+  shared_preferences:
+  http:
+  image_picker:
+  url_launcher:
+  intl:
+  connectivity_plus:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints:
+  flutter_launcher_icons:
+  flutter_native_splash:
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/app_logo.png  # Path to your logo image
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_logo.png"  # Path to the logo for app icon
+
+flutter_native_splash:
+  color: "#ffffff"  # Background color for splash screen
+  image: "assets/images/app_logo.png"  # Path to the logo for splash screen
+  android: true
+  ios: true

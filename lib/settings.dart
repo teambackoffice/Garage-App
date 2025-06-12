@@ -48,72 +48,72 @@ class GarageSettingsPage extends StatelessWidget {
           style: TextStyle(color: Colors.black),
         ),
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 12),
-          Center(
-            child: Text(
-              'Garage Settings',
-              style: TextStyle(
-                color: Colors.teal,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          SizedBox(height: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: GridView.builder(
-                itemCount: settingsOptions.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 1.2,
-                ),
-                itemBuilder: (context, index) {
-                  final item = settingsOptions[index];
-                  return GestureDetector(
-                    onTap: () {
-                      // Navigation logic here
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            item['icon'],
-                            size: 42,
-                            color: Colors.teal,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            item['title'],
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+      // body: Column(
+      //   children: [
+      //     SizedBox(height: 12),
+      //     Center(
+      //       child: Text(
+      //         'Garage Settings',
+      //         style: TextStyle(
+      //           color: Colors.teal,
+      //           fontSize: 16,
+      //           fontWeight: FontWeight.w500,
+      //         ),
+      //       ),
+      //     ),
+      //     SizedBox(height: 12),
+      //     Expanded(
+      //       child: Padding(
+      //         padding: const EdgeInsets.symmetric(horizontal: 12),
+      //         child: GridView.builder(
+      //           itemCount: settingsOptions.length,
+      //           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      //             crossAxisCount: 2,
+      //             mainAxisSpacing: 14,
+      //             crossAxisSpacing: 14,
+      //             childAspectRatio: 1.2,
+      //           ),
+      //           itemBuilder: (context, index) {
+      //             final item = settingsOptions[index];
+      //             return GestureDetector(
+      //               onTap: () {
+      //                 // Navigation logic here
+      //               },
+      //               child: Container(
+      //                 decoration: BoxDecoration(
+      //                   color: Colors.white,
+      //                   border: Border.all(color: Colors.grey.shade300),
+      //                   borderRadius: BorderRadius.circular(10),
+      //                 ),
+      //                 padding: EdgeInsets.all(10),
+      //                 child: Column(
+      //                   mainAxisAlignment: MainAxisAlignment.center,
+      //                   children: [
+      //                     Icon(
+      //                       item['icon'],
+      //                       size: 42,
+      //                       color: Colors.teal,
+      //                     ),
+      //                     SizedBox(height: 10),
+      //                     Text(
+      //                       item['title'],
+      //                       style: TextStyle(
+      //                         fontSize: 13.5,
+      //                         fontWeight: FontWeight.w500,
+      //                         color: Colors.black87,
+      //                       ),
+      //                       textAlign: TextAlign.center,
+      //                     )
+      //                   ],
+      //                 ),
+      //               ),
+      //             );
+      //           },
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+      // ),
     );
   }
 }

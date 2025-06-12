@@ -91,7 +91,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.menu_open),
                 activeIcon: Icon(Icons.menu),
-                label: 'More',
+                label: 'Account',
               ),
             ],
           ),

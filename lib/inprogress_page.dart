@@ -24,7 +24,7 @@ class _InProgressPageState extends State<InProgressPage> {
     });
 
     final repairOrderId = _repairOrderController.text.trim();
-    final url = Uri.parse('https://garage.teambackoffice.com/api/method/garage.garage.auth.repairorder_inprogress');
+    final url = Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.repairorder_inprogress');
 
     try {
       final prefs = await SharedPreferences.getInstance();

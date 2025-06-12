@@ -21,9 +21,28 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   String? _errorMessage;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sid = prefs.getString('sid');
+    if (sid != null && sid.isNotEmpty) {
+      // User already logged in, navigate to home screen
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const BottomNavBarScreen()),
+      );
+    }
+  }
+
   Future<void> _login() async {
     const String apiUrl =
-        'https://garage.teambackoffice.com/api/method/garage.garage.auth.user_login';
+        'https://garage.tbo365.cloud/api/method/garage.garage.auth.user_login';
 
     if (!await _hasNetwork()) {
       _showError("No internet connection. Please check your network.");
@@ -59,10 +78,11 @@ class _LoginPageState extends State<LoginPage> {
           if (token != null) {
             SharedPreferences prefs = await SharedPreferences.getInstance();
             await prefs.setString('username', username);
-            await prefs.setString('sid', token);
+            await prefs.setString('sid', token);  // Save session ID
 
             print("✅ Saved sid: $token");
 
+            if (!mounted) return;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => const BottomNavBarScreen()),
@@ -88,13 +108,10 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-
-
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
-
 
   Future<bool> _hasNetwork() async {
     try {
@@ -104,6 +121,7 @@ class _LoginPageState extends State<LoginPage> {
       return false;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;

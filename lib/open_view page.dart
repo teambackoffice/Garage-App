@@ -44,12 +44,11 @@ class _OpenViewPageState extends State<OpenViewPage> {
       return;
     }
 
-    // Choose the correct endpoint based on the status
     late final Uri url;
     if (status == "working_progress") {
-      url = Uri.parse('https://garage.teambackoffice.com/api/method/garage.garage.auth.repairorder_inprogress');
+      url = Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.repairorder_inprogress');
     } else if (status == "ready_order") {
-      url = Uri.parse('https://garage.teambackoffice.com/api/method/garage.garage.auth.repairorder_ready_orders');
+      url = Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.repairorder_ready_orders');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("❌ Invalid status type")),
@@ -98,11 +97,36 @@ class _OpenViewPageState extends State<OpenViewPage> {
     }
   }
 
+  Future<void> _showConfirmationDialog(String status, String title) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm $title'),
+        content: Text('Are you sure you want to mark this order as "$title"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _updateRepairOrderStatus(status);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Repair Order Details'),
         backgroundColor: Colors.white,
@@ -134,7 +158,7 @@ class _OpenViewPageState extends State<OpenViewPage> {
                   SizedBox(
                     width: width * 0.8,
                     child: ElevatedButton.icon(
-                      onPressed: () => _updateRepairOrderStatus("working_progress"),
+                      onPressed: () => _showConfirmationDialog("working_progress", "Working Progress"),
                       icon: const Icon(Icons.work_outline),
                       label: const Text("Mark as Working Progress"),
                       style: ElevatedButton.styleFrom(
@@ -148,7 +172,7 @@ class _OpenViewPageState extends State<OpenViewPage> {
                   SizedBox(
                     width: width * 0.8,
                     child: ElevatedButton.icon(
-                      onPressed: () => _updateRepairOrderStatus("ready_order"),
+                      onPressed: () => _showConfirmationDialog("ready_order", "Ready Order"),
                       icon: const Icon(Icons.check_circle_outline),
                       label: const Text("Mark as Ready Order"),
                       style: ElevatedButton.styleFrom(

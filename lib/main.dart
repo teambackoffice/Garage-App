@@ -1,5 +1,8 @@
 
 import 'package:flutter/material.dart';
+import 'package:garage_app/task1.dart';
+import 'bottom_nav.dart';
+import 'inspection.dart';
 import 'login_page.dart';
 
 void main() async {

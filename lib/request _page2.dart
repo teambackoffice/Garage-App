@@ -39,7 +39,7 @@ class _RequestState extends State<Request> {
   }
 
   Future<void> fetchAppointmentDetails() async {
-    const url = 'https://garage.teambackoffice.com/api/method/garage.garage.auth.get_requested_appointments_count';
+    const url = 'https://garage.tbo365.cloud/api/method/garage.garage.auth.get_requested_appointments_count';
 
     setState(() {
       _isLoading = true;
@@ -98,7 +98,7 @@ class _RequestState extends State<Request> {
   }
 
   Future<void> cancelAppointment(String appointmentId) async {
-    const url = 'https://garage.teambackoffice.com/api/method/garage.garage.auth.appointment_cancel';
+    const url = 'https://garage.tbo365.cloud/api/method/garage.garage.auth.appointment_cancel';
 
     if (appointmentId.isEmpty) {
       _showError("Invalid appointment ID.");
@@ -160,7 +160,7 @@ class _RequestState extends State<Request> {
   }
 
   Future<void> confirmAppointment(String appointmentId) async {
-    const url = 'https://garage.teambackoffice.com/api/method/garage.garage.auth.appointment_confirm';
+    const url = 'https://garage.tbo365.cloud/api/method/garage.garage.auth.appointment_confirm';
 
     if (appointmentId.isEmpty) {
       _showError("Invalid appointment ID.");

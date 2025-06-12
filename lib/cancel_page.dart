@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Cancel extends StatefulWidget {
   const Cancel({super.key});
@@ -23,7 +25,7 @@ class _CancelState extends State<Cancel> {
 
   Future<void> _fetchCancelledAppointments() async {
     const String apiUrl =
-        'https://garage.teambackoffice.com/api/method/garage.garage.auth.get_cancelled_appointments_count';
+        'https://garage.tbo365.cloud/api/method/garage.garage.auth.get_cancelled_appointments_count';
 
     setState(() {
       _isLoading = true;
@@ -68,6 +70,29 @@ class _CancelState extends State<Cancel> {
     }
   }
 
+  Future<void> openWhatsApp(String phone, String message) async {
+    final phoneNumber = phone.replaceAll(RegExp(r'\D'), ''); // Clean the phone number
+    final uri = Uri.parse("https://wa.me/$phoneNumber?text=${Uri.encodeFull(message)}");
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Redirecting to WhatsApp...")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not open WhatsApp")),
+        );
+      }
+    } catch (e) {
+      print("Error launching WhatsApp: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: Could not open WhatsApp. $e")),
+      );
+    }
+  }
+
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -78,18 +103,17 @@ class _CancelState extends State<Cancel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Adding "Cancelled" text inside each card
             Text(
-              "Cancelled", // Text indicating the appointment was cancelled
+              "Cancelled",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.red,
               ),
             ),
-            SizedBox(height: 8),
-            Text("Appointment ID: ${appointment['name']}", style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
+            Text("Appointment ID: ${appointment['name']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Text("Customer: ${appointment['customer_name']}"),
             Text("Date: ${appointment['date']}"),
             Text("Time: ${appointment['time']}"),
@@ -97,6 +121,18 @@ class _CancelState extends State<Cancel> {
             Text("Model: ${appointment['model']}"),
             Text("Make: ${appointment['make']}"),
             Text("Registration: ${appointment['registration_number']}"),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                  icon: const Icon(Icons.chat, color: Colors.green),
+                onPressed: () {
+                  final phone = appointment['mobile'] ?? '';
+                  final message = "Hello ${appointment['customer_name']}, your appointment on ${appointment['date']} at ${appointment['time']} was cancelled. Please contact us for rescheduling.";
+                  openWhatsApp(phone, message);
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -114,8 +150,9 @@ class _CancelState extends State<Cancel> {
           },
           child: const Icon(Icons.arrow_back_ios_sharp, color: Colors.black),
         ),
-        title: const Text("Cancelled Appointments"),
+        title: const Text("Cancelled Appointments", style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
+        elevation: 1,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -22,7 +22,7 @@ class _PackagePageState extends State<PackagePage> {
 
   Future<void> fetchPackageData() async {
     const url =
-        'https://garage.teambackoffice.com/api/method/garage.garage.auth.get_all_packages';
+        'https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_packages';
 
     try {
       final response = await http.get(Uri.parse(url));

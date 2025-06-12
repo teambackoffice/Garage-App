@@ -22,7 +22,7 @@ class _ServicePageState extends State<ServicePage> {
   }
 
   Future<void> _fetchServices() async {
-    const url = 'https://garage.teambackoffice.com/api/method/garage.garage.auth.get_all_services';
+    const url = 'https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_services';
     final response = await http.get(Uri.parse(url));
     final data = jsonDecode(response.body);
     setState(() {
@@ -71,6 +71,28 @@ class _ServicePageState extends State<ServicePage> {
         _qtyControllers[index].text = (currentQty - 1).toString();
       }
     });
+  }
+  double _calculateSubtotal() {
+    double subtotal = 0.0;
+    for (int i = 0; i < _services.length; i++) {
+      if (_isSelected[i]) {
+        int qty = int.tryParse(_qtyControllers[i].text) ?? 1;
+        double rate = _services[i]['rate']?.toDouble() ?? 0.0;
+        subtotal += qty * rate;
+      }
+    }
+    return subtotal;
+  }
+
+  double _calculateTax(double subtotal) {
+    return 20.0; // Fixed tax amount
+  }
+
+
+  double _calculateTotal() {
+    double subtotal = _calculateSubtotal();
+    double tax = _calculateTax(subtotal);
+    return subtotal + tax;
   }
 
   @override
@@ -189,19 +211,78 @@ class _ServicePageState extends State<ServicePage> {
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: ElevatedButton(
-          onPressed: _submitSelection,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueGrey,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: const Text(
-            "Add Selected Services",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_isSelected.contains(true)) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Subtotal:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    "₹${_calculateSubtotal().toStringAsFixed(2)}",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Tax (18%):",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    "₹${_calculateTax(_calculateSubtotal()).toStringAsFixed(2)}",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+
+
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Total:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "₹${_calculateTotal().toStringAsFixed(2)}",
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+            ],
+            SizedBox(
+              width: double.infinity, // Makes the button take full width
+              child: ElevatedButton(
+                onPressed: _submitSelection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 14), // Optional: Adds vertical padding
+                ),
+                child: const Text(
+                  "Add Selected Services",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+
+          ],
         ),
       ),
+
     );
   }
 }

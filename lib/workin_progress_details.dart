@@ -50,13 +50,11 @@ class _WorkInProgressState extends State<WorkInProgress> {
     }
 
     final url = Uri.parse(
-        'https://garage.teambackoffice.com/api/method/garage.garage.auth.repairorder_ready_orders');
+        'https://garage.tbo365.cloud/api/method/garage.garage.auth.repairorder_ready_orders');
 
-    // Update the request body with additional parameters based on the API's requirements
     final requestBody = jsonEncode({
-      'repairorder_id': orderId, // The order ID
-      'status': 'ready', // This is just an example, check the documentation for actual params
-      // Add any other parameters that the API requires, like 'vehicle_id', 'user_id', etc.
+      'repairorder_id': orderId,
+      'status': 'ready',
     });
 
     debugPrint("🔵 Request Body: $requestBody");
@@ -84,7 +82,7 @@ class _WorkInProgressState extends State<WorkInProgress> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("✅ Marked as Ready")),
         );
-        Navigator.pop(context, true); // Optional: Go back with success
+        Navigator.pop(context, true);
       } else {
         setState(() {
           _error = '❌ Failed: $message';
@@ -101,6 +99,30 @@ class _WorkInProgressState extends State<WorkInProgress> {
     }
   }
 
+  Future<void> _showConfirmationDialog() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm'),
+        content: const Text('Are you sure you want to mark this order as ready?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _markRepairOrderAsReady();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -111,7 +133,7 @@ class _WorkInProgressState extends State<WorkInProgress> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         actions: [
-          Icon(Icons.home,color: Colors.black,)
+          const Icon(Icons.home, color: Colors.black),
         ],
         title: const Text('In Progress List', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
@@ -135,7 +157,7 @@ class _WorkInProgressState extends State<WorkInProgress> {
                 width: width * 0.6,
                 height: height * 0.06,
                 child: ElevatedButton(
-                  onPressed: _markRepairOrderAsReady,
+                  onPressed: _showConfirmationDialog,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.blue,

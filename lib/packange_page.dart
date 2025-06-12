@@ -12,7 +12,7 @@ class Pack extends StatefulWidget {
 class _PackState extends State<Pack> {
   Future<List<dynamic>?> fetchPackages() async {
     const String baseUrl =
-        'https://garage.teambackoffice.com/api/method/garage.garage.auth.get_all_packages';
+        'https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_packages';
 
     try {
       final response = await http.get(Uri.parse(baseUrl));

@@ -5,15 +5,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ReadyOrder extends StatefulWidget {
   final String repairOrderId;
-
-  const ReadyOrder({super.key, required this.repairOrderId});
+  final String service_items;
+  final String parts_items;
+final String status;
+  const ReadyOrder({super.key, required this.repairOrderId, required this.service_items, required this.parts_items, required this.status});
 
   @override
   State<ReadyOrder> createState() => _ReadyOrderState();
 }
 
 class _ReadyOrderState extends State<ReadyOrder> {
-  String status = "Working In Progress";
+  // String status = "Working In Progress";
   String company = "GARAGE COMPANY";
 
   Future<void> _updateRepairOrderStatus(String apiUrl) async {
@@ -120,10 +122,10 @@ class _ReadyOrderState extends State<ReadyOrder> {
                       Navigator.pop(context);  // Dismiss the alert
                       if (action == 'inprogress') {
                         _updateRepairOrderStatus(
-                            'https://garage.teambackoffice.com/api/method/garage.garage.auth.repairorder_inprogress');
+                            'https://garage.tbo365.cloud/api/method/garage.garage.auth.repairorder_inprogress');
                       } else {
                         _updateRepairOrderStatus(
-                            'https://garage.teambackoffice.com/api/method/garage.garage.auth.repairorder_ready_orders');
+                            'https://garage.tbo365.cloud/api/method/garage.garage.auth.repairorder_ready_orders');
                       }
                     },
                     child: const Text("Confirm"),
@@ -196,8 +198,10 @@ class _ReadyOrderState extends State<ReadyOrder> {
         child: Column(
           children: [
             buildSection("More", [
-              buildField("Status", status),
+              buildField("Status", widget.status),
               buildField("Company", company),
+             widget.service_items.isEmpty ? SizedBox() : buildField("Services", widget.service_items),
+              widget.parts_items.isEmpty ? SizedBox() : buildField("Parts", widget.parts_items)
             ]),
             const SizedBox(height: 10),
             ElevatedButton.icon(

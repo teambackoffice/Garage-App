@@ -12,10 +12,11 @@ dependencies:
   cupertino_icons:
   shared_preferences:
   http:
-  image_picker:
+  image_picker: ^1.1.2
   url_launcher:
   intl:
-  connectivity_plus:
+  flutter_secure_storage:
+  file_picker: ^10.1.9
 
 dev_dependencies:
   flutter_test:
@@ -23,19 +24,20 @@ dev_dependencies:
   flutter_lints:
   flutter_launcher_icons:
   flutter_native_splash:
+  dio: ^5.0.1
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/app_logo.png  # Path to your logo image
+    - assets/images/app_logo.png
 
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/app_logo.png"  # Path to the logo for app icon
+  image_path: "assets/images/app_logo.png"
 
 flutter_native_splash:
-  color: "#ffffff"  # Background color for splash screen
-  image: "assets/images/app_logo.png"  # Path to the logo for splash screen
+  color: "#ffffff"
+  image: "assets/images/app_logo.png"
   android: true
   ios: true

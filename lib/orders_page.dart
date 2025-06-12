@@ -41,7 +41,7 @@ class _OrdersListPageState extends State<OrdersListPage> {
       }
 
       final url = Uri.parse(
-        'https://garage.teambackoffice.com/api/method/garage.garage.auth.get_all_created_repairorder_list',
+        'https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_created_repairorder_list',
       );
 
       final response = await http.get(
@@ -84,6 +84,17 @@ class _OrdersListPageState extends State<OrdersListPage> {
     final regNo = order['registration_number'] ?? 'N/A';
     final grandTotal = (order['grand_total'] ?? 0).toStringAsFixed(2);
     final status = order['status'] ?? 'CREATED';
+    final services = order['service_items'] ?? [];
+    final parts = order['parts_items'] ?? [];
+
+// Extract only the service names
+    final serviceNames = services.map((item) => item['item_name'] ?? 'Unnamed Service').toList();
+    final partNames = parts.map((item) => item['item_name'] ?? '').toList();
+
+// If you want to display as a comma-separated string
+    final serviceNamesString = serviceNames.join(', ');
+    final partNamesString = partNames.join(', ');
+
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -100,6 +111,8 @@ class _OrdersListPageState extends State<OrdersListPage> {
             Text("Reg No: $regNo"),
             Text("Total: ₹$grandTotal"),
             Text("Status: $status"),
+
+
           ],
         ),
         trailing: const Icon(Icons.arrow_forward_ios),
@@ -107,7 +120,7 @@ class _OrdersListPageState extends State<OrdersListPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ReadyOrder(repairOrderId: orderId),
+              builder: (_) => ReadyOrder(repairOrderId: orderId,service_items: serviceNamesString,parts_items: partNamesString,status : status),
             ),
           );
         },

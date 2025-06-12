@@ -54,7 +54,7 @@ class _CustomerState extends State<Customer> {
       }
 
       final response = await http.post(
-        Uri.parse("https://garage.teambackoffice.com/api/method/garage.garage.auth.create_new_user"),
+        Uri.parse("https://garage.tbo365.cloud/api/method/garage.garage.auth.create_new_user"),
         headers: {
           "Content-Type": "application/json",
           "Cookie": "sid=$sid",

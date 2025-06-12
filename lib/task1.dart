@@ -1,80 +1,38 @@
 // import 'package:flutter/material.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
+// import 'package:url_launcher/url_launcher.dart';
 //
-// class ListPage extends StatefulWidget {
-//   @override
-//   _ListPageState createState() => _ListPageState();
-// }
+// class WhatsAppMessagePage extends StatelessWidget {
+//   final String phoneNumber = "919562596317"; // Replace with receiver's number
 //
-// class _ListPageState extends State<ListPage> {
-//   List<Map<String, dynamic>> items = [];
-//   bool isLoading = true;
+//   void _openWhatsApp(String message) async {
+//     final url = "https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}";
 //
-//   @override
-//   void initState() {
-//     super.initState();
-//     fetchItems();
-//   }
-//
-//   // Function to fetch data from the API
-//   Future<void> fetchItems() async {
-//     final url = Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_parts');
-//     final response = await http.get(url);
-//
-//     if (response.statusCode == 200) {
-//       final Map<String, dynamic> jsonResponse = json.decode(response.body);
-//
-//       final List<dynamic> data = jsonResponse['data'];
-//
-//       setState(() {
-//         items = data.map((item) => item as Map<String, dynamic>).toList();
-//         isLoading = false;
-//       });
+//     if (await canLaunchUrl(Uri.parse(url))) {
+//       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 //     } else {
-//       setState(() {
-//         items = [];
-//         isLoading = false;
-//       });
+//       throw 'Could not launch WhatsApp';
 //     }
 //   }
 //
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Parts List'),
-//       ),
-//       body: isLoading
-//           ? Center(child: CircularProgressIndicator())
-//           : ListView.builder(
-//         itemCount: items.length,
-//         itemBuilder: (context, index) {
-//           final item = items[index];
-//
-//           return Card(
-//             margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-//             elevation: 5,
-//             child: ListTile(
-//               contentPadding: EdgeInsets.all(15),
-//               title: Text(
-//                 item['item_name'] ?? 'No name',  // Display item name
-//                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-//               ),
-//               subtitle: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text('Item Code: ${item['item_code']}'),  // Display item code
-//                   Text('Rate: \$${item['rate']}'),  // Display the rate
-//                   Text('Description: ${item['description'] ?? 'No description'}'),  // Display description
-//                 ],
-//               ),
-//               leading: Icon(Icons.archive, size: 40, color: Colors.blue),  // Placeholder icon
-//               onTap: () {
-//               },
+//       appBar: AppBar(title: Text('Send WhatsApp Message')),
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             ElevatedButton(
+//               onPressed: () => _openWhatsApp("Yes, I confirm the appointment."),
+//               child: Text('Yes'),
 //             ),
-//           );
-//         },
+//             SizedBox(height: 20),
+//             ElevatedButton(
+//               onPressed: () => _openWhatsApp("No, I cannot confirm the appointment."),
+//               child: Text('No'),
+//             ),
+//           ],
+//         ),
 //       ),
 //     );
 //   }

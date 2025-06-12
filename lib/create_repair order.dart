@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:garage_app/part_service.dart';
 import 'package:garage_app/service_page.dart';
+import 'package:garage_app/service_parts_adding/service_parts_adding.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -1446,43 +1447,43 @@ class _CreateRepairOrderState extends State<CreateRepairOrder> {
               _buildTextField("registration_number", "Registration Number", icon: Icons.confirmation_number),
 
               // Services and Parts Sections
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(
-                  "Services and Parts",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade800,
-                  ),
-                ),
-              ),
-              _buildSection("SERVICES", _addService),
-              if (serviceItems.isNotEmpty)
-                _buildItemList("SERVICES", serviceItems),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              //   child: Text(
+              //     "Services and Parts",
+              //     style: TextStyle(
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //       color: Colors.blue.shade800,
+              //     ),
+              //   ),
+              // ),
+              // _buildSection("SERVICES", _addService),
+              // if (serviceItems.isNotEmpty)
+              //   _buildItemList("SERVICES", serviceItems),
+              //
+              // _buildSection("PARTS", _addPart),
+              // if (partsItems.isNotEmpty)
+              //   _buildItemList("PARTS", partsItems),
 
-              _buildSection("PARTS", _addPart),
-              if (partsItems.isNotEmpty)
-                _buildItemList("PARTS", partsItems),
-
-              _buildSummary(),
+              // _buildSummary(),
 
               // Additional Details Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(
-                  "Additional Details",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade800,
-                  ),
-                ),
-              ),
-              _buildExtraInputs(),
-              _buildTagsRemarks(),
-              _buildImagePickerFields(),
-              _buildExtraTextInputs(),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              //   child: Text(
+              //     "Additional Details",
+              //     style: TextStyle(
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //       color: Colors.blue.shade800,
+              //     ),
+              //   ),
+              // ),shade800
+              // _buildExtraInputs(),
+              // _buildTagsRemarks(),
+              // _buildImagePickerFields(),
+              // _buildExtraTextInputs(),
 
               // Submit Button
               Padding(
@@ -1490,28 +1491,57 @@ class _CreateRepairOrderState extends State<CreateRepairOrder> {
                 child: SizedBox(
                   width: screenWidth,
                   height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitFinalRepairOrder,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: _isSubmitting
-                        ? const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        SizedBox(width: 16),
-                        Text("Submitting...", style: TextStyle(color: Colors.white)),
-                      ],
-                    )
-                        : const Text(
-                      "Submit Repair Order",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  child: ElevatedButton(style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+
+                      onPressed: (){
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ServicePartAdding(
+                            customername: _customerNameController.text,
+                            mobile: _mobileController.text,
+                            email: _emailController.text,
+                            address: _addressController.text,
+                            city: _cityController.text,
+                            make: _makeController.text,
+                            model: _modelController.text,
+                            purchaseDate: _purchaseDateController.text,
+                            engineNumber: _engineNumberController.text,
+                            chasisNumber: _chassisNumberController.text,
+                            registrationNumber: _registrationNumberController.text,
+                            notifyCustomer: notifyCustomer,
+                            deliveryTime: deliveryTime,
+                          )),
+                        );
+
+                      }, child: Text('Continue'))
+                  
+                  // ElevatedButton(
+                  //   onPressed: _isSubmitting ? null : _submitFinalRepairOrder,
+                  //   style: ElevatedButton.styleFrom(
+                  //     padding: const EdgeInsets.symmetric(vertical: 16),
+                  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  //     backgroundColor: Colors.green,
+                  //     foregroundColor: Colors.white,
+                  //   ),
+                  //   child: _isSubmitting
+                  //       ? const Row(
+                  //     mainAxisAlignment: MainAxisAlignment.center,
+                  //     children: [
+                  //       CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  //       SizedBox(width: 16),
+                  //       Text("Submitting...", style: TextStyle(color: Colors.white)),
+                  //     ],
+                  //   )
+                  //       : const Text(
+                  //     "Submit Repair Order",
+                  //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  //   ),
+                  // ),
                 ),
               ),
             ],

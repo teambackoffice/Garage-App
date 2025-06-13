@@ -48,6 +48,7 @@ class _CreateRepairOrderState extends State<CreateRepairOrder> {
   // State variables
   bool notifyCustomer = false;
   bool _isRefreshing = false;
+  bool isInspectionNeeded = false;
   File? _selectedImage;
   List<Map<String, dynamic>> partsItems = [];
   double partsTotal = 0.0;
@@ -1484,6 +1485,39 @@ class _CreateRepairOrderState extends State<CreateRepairOrder> {
               // _buildTagsRemarks(),
               // _buildImagePickerFields(),
               // _buildExtraTextInputs(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      isInspectionNeeded = !isInspectionNeeded;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: isInspectionNeeded,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            isInspectionNeeded = value ?? false;
+                          });
+                        },
+                        activeColor: Colors.green,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Inspection Needed',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold, // 🔥 Bold text here
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
 
               // Submit Button
               Padding(

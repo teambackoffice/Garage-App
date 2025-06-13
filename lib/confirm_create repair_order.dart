@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:garage_app/service_parts_adding/service_parts_adding.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -47,6 +48,7 @@ class _CreateRepairOrderState extends State<CreateRepair> {
 
   final Map<String, TextEditingController> _controllers = {};
   bool notifyCustomer = false;
+  bool isInspectionNeeded = false;
   List<File> _customerRemarksImages = []; // Support for multiple images (max 3)
   List<Map<String, dynamic>> partsItems = [];
   double partsTotal = 0.0;
@@ -1518,81 +1520,148 @@ class _CreateRepairOrderState extends State<CreateRepair> {
               _buildTextField("engine_number", "Engine Number", icon: Icons.engineering),
               _buildTextField("chasis_number", "Chassis Number", icon: Icons.directions_car),
               _buildTextField("registration_number", "Registration Number", icon: Icons.confirmation_number),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              //   child: Text(
+              //     "Services and Parts",
+              //     style: TextStyle(
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //       color: Colors.blue.shade800,
+              //     ),
+              //   ),
+              // ),
+    //           _buildSection("SERVICES", _addService),
+    //           if (serviceItems.isNotEmpty)
+    //             _buildItemList(
+    //   "SERVICES",
+    //   serviceItems,
+    //       (index) {
+    //     setState(() {
+    //       serviceItems.removeAt(index);
+    //     });
+    //   },
+    // ),
+
+    //           _buildSection("PARTS", _addPart),
+    //           if (partsItems.isNotEmpty) _buildItemList(
+    // "PARTS",
+    // partsItems,
+    // (index) {
+    // setState(() {
+    // partsItems.removeAt(index);
+    // });
+    // },
+    // ),
+    //
+    //           // _buildSummary(),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              //   child: Text(
+              //     "Additional Details",
+              //     style: TextStyle(
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //       color: Colors.blue.shade800,
+              //     ),
+              //   ),
+              // ),
+              // _buildExtraInputs(),
+              // _buildTagsRemarks(),
+              // _buildImagePickerFields(),
+              // _buildExtraTextInputs(),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(
-                  "Services and Parts",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade800,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      isInspectionNeeded = !isInspectionNeeded;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: isInspectionNeeded,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            isInspectionNeeded = value ?? false;
+                          });
+                        },
+                        activeColor: Colors.green,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Inspection Needed',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold, // 🔥 Bold text here
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              _buildSection("SERVICES", _addService),
-              if (serviceItems.isNotEmpty)
-                _buildItemList(
-      "SERVICES",
-      serviceItems,
-          (index) {
-        setState(() {
-          serviceItems.removeAt(index);
-        });
-      },
-    ),
 
-              _buildSection("PARTS", _addPart),
-              if (partsItems.isNotEmpty) _buildItemList(
-    "PARTS",
-    partsItems,
-    (index) {
-    setState(() {
-    partsItems.removeAt(index);
-    });
-    },
-    ),
 
-              _buildSummary(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(
-                  "Additional Details",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade800,
-                  ),
-                ),
-              ),
-              _buildExtraInputs(),
-              _buildTagsRemarks(),
-              _buildImagePickerFields(),
-              _buildExtraTextInputs(),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(
-                  width: screenWidth * 0.9,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitFinalRepairOrder,
-                    style: ElevatedButton.styleFrom(
+                    width: screenWidth,
+                    height: 50,
+                    child: ElevatedButton(style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                     ),
-                    child: _isSubmitting
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                      "Submit Repair Order",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+
+                        onPressed: (){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ServicePartAdding(
+                              customername: _customerNameController.text,
+                              mobile: _mobileController.text,
+                              email: _emailController.text,
+                              address: _addressController.text,
+                              city: _cityController.text,
+                              make: _makeController.text,
+                              model: _modelController.text,
+                              purchaseDate: _purchaseDateController.text,
+                              engineNumber: _engineNumberController.text,
+                              chasisNumber: _chassisNumberController.text,
+                              registrationNumber: _registrationNumberController.text,
+                              notifyCustomer: notifyCustomer,
+                              deliveryTime: deliveryTime,
+                            )),
+                          );
+
+                        }, child: Text('Continue'))
+            //   Padding(
+            //     padding: const EdgeInsets.all(16),
+            //     child: SizedBox(
+            //       width: screenWidth * 0.9,
+            //       height: 50,
+            //       child: ElevatedButton(
+            //         onPressed: _isSubmitting ? null : _submitFinalRepairOrder,
+            //         style: ElevatedButton.styleFrom(
+            //           padding: const EdgeInsets.symmetric(vertical: 16),
+            //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            //           backgroundColor: Colors.green,
+            //         ),
+            //         child: _isSubmitting
+            //             ? const CircularProgressIndicator(color: Colors.white)
+            //             : const Text(
+            //           "Submit Repair Order",
+            //           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ],
           ),
         ),
-      ),
-    );
+      ]),
+    )));
   }
 }

@@ -1136,7 +1136,7 @@ class _ServicePartAddingState extends State<ServicePartAdding> {
                           ],
                   )
                             : const Text(
-                          "Submit Repair Order",
+                          "Submit Repafffir Order",
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),

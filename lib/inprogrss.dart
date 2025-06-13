@@ -70,6 +70,7 @@ class _InProgressRepairOrdersPageState
           final orderName = (order['name'] ?? '').toString().toLowerCase();
           final make = (order['make'] ?? '').toString().toLowerCase();
           final model = (order['model'] ?? '').toString().toLowerCase();
+          // final services = (order['service_items'] ?? []);
 
           final searchQuery = query.toLowerCase();
 
@@ -253,6 +254,12 @@ class _InProgressRepairOrdersPageState
     final String status = order['status'] ?? 'In Progress';
     final dynamic grandTotalRaw = order['grand_total'] ?? order['total_amount'] ?? order['total'] ?? 0;
     final double grandTotal = double.tryParse(grandTotalRaw.toString()) ?? 0.0;
+    final List<dynamic> services = order['service_items'] ?? [];
+    final List serviceNames = services.map((service) => service['item_name'] ?? '').toList();
+    final String servicesString = serviceNames.join(', ');
+    final List<dynamic> parts = order['parts_items'] ?? [];
+    final List partNames = parts.map((part) => part['item_name'] ?? '').toList();
+    final String partsString = partNames.join(', ');
 
     // Responsive font sizes and padding
     final double fontSizeTitle = screenWidth < 400 ? 14 : 16;
@@ -269,7 +276,7 @@ class _InProgressRepairOrdersPageState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WorkInProgress(),
+              builder: (context) =>  WorkInProgress( services : servicesString, parts : partsString),
               settings: RouteSettings(arguments: orderName),
             ),
           );

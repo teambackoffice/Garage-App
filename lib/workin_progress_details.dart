@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkInProgress extends StatefulWidget {
-  const WorkInProgress({super.key});
+  final String? services;
+  final String? parts;
+
+  const WorkInProgress({super.key, required this.services, required this.parts});
 
   @override
   State<WorkInProgress> createState() => _WorkInProgressState();
@@ -152,6 +155,17 @@ class _WorkInProgressState extends State<WorkInProgress> {
                 style: TextStyle(fontSize: width * 0.045, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
+             widget.services == null ? SizedBox() : Text(
+                "Services: ${widget.services}",
+                style: TextStyle( fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+             widget.parts == null ? SizedBox() : Text(
+                "Parts: ${widget.parts}",
+                style: TextStyle( fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+
               SizedBox(height: height * 0.03),
               SizedBox(
                 width: width * 0.6,

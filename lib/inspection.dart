@@ -2121,16 +2121,23 @@ class FullScreenImageViewer extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Image.file(
-            imageFile,
-            fit: BoxFit.contain,
+      body: Column(
+        children: [
+          Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.file(
+                imageFile,
+                fit: BoxFit.contain,
+              ),
+            ),
           ),
-        ),
+
+        ],
       ),
+
+
     );
   }
 }

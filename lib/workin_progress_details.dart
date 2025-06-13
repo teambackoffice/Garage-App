@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:garage_app/inspection.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -182,6 +183,29 @@ class _WorkInProgressState extends State<WorkInProgress> {
                   ),
                   child: const Text('Mark as Ready'),
                 ),
+
+              ),
+              SizedBox(height: 10,),
+              SizedBox(width: width * 0.4,
+                height: height * 0.06,
+
+                child: ElevatedButton( style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: TextStyle(fontSize: width * 0.038),
+                ),
+                    onPressed: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>  Inspection( ),
+
+                        ),
+                      );
+                    }, child: Text('Add Inspection',style: TextStyle(fontWeight: FontWeight.bold),)),
               ),
               if (_error != null) ...[
                 SizedBox(height: height * 0.03),

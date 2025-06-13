@@ -544,6 +544,7 @@ class _CompliteOrdersState extends State<CompliteOrders> {
     );
 
     if (response.statusCode == 200) {
+      print("======= RESPONSE IS ======== ${response.body}");
       return jsonDecode(response.body);
     } else {
       debugPrint('Failed to fetch completed repair orders. Status: ${response.statusCode}');

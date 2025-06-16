@@ -52,6 +52,353 @@ class _InspectionState extends State<Inspection> {
   List<Map<String, dynamic>> serviceItems = [];
   List<Map<String, dynamic>> partsItems = [];
 
+  void _showInspectionSelectionDialog() {
+  // Initialize selection list if empty
+  if (_selectedInspections.isEmpty) {
+    _selectedInspections = List.filled(inspections.length, false);
+  }
+  
+  List<bool> tempSelection = List.from(_selectedInspections);
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          int selectedCount = tempSelection.where((selected) => selected).length;
+          
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 16,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: MediaQuery.of(context).size.height * 0.8,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue[50]!,
+                    Colors.white,
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Header Section
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.blue[600]!,
+                          Colors.blue[700]!,
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.checklist_rtl,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Select Inspections',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Choose the inspections you want to perform',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Selection Counter
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: selectedCount > 0 ? Colors.green[50] : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selectedCount > 0 ? Colors.green[200]! : Colors.grey[300]!,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          selectedCount > 0 ? Icons.check_circle : Icons.info_outline,
+                          color: selectedCount > 0 ? Colors.green[600] : Colors.grey[600],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          selectedCount > 0 
+                              ? '$selectedCount inspection${selectedCount == 1 ? '' : 's'} selected'
+                              : 'No inspections selected',
+                          style: TextStyle(
+                            color: selectedCount > 0 ? Colors.green[700] : Colors.grey[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (selectedCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green[600],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$selectedCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Quick Actions
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              setDialogState(() {
+                                tempSelection = List.filled(inspections.length, true);
+                              });
+                            },
+                            icon: const Icon(Icons.select_all, size: 18),
+                            label: const Text('Select All'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue[600],
+                              side: BorderSide(color: Colors.blue[600]!),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              setDialogState(() {
+                                tempSelection = List.filled(inspections.length, false);
+                              });
+                            },
+                            icon: const Icon(Icons.clear_all, size: 18),
+                            label: const Text('Clear All'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red[600],
+                              side: BorderSide(color: Colors.red[600]!),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Inspections List
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: inspections.length,
+                        itemBuilder: (context, index) {
+                          bool isSelected = tempSelection[index];
+                          
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.blue[50] : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? Colors.blue[200]! : Colors.transparent,
+                                width: 1,
+                              ),
+                            ),
+                            child: CheckboxListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              title: Text(
+                                inspections[index],
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  color: isSelected ? Colors.blue[700] : Colors.grey[800],
+                                ),
+                              ),
+                              // subtitle: Text(
+                              //   'Inspection ${index + 1}',
+                              //   style: TextStyle(
+                              //     fontSize: 12,
+                              //     color: isSelected ? Colors.blue[600] : Colors.grey[600],
+                              //   ),
+                              // ),
+                              value: isSelected,
+                              onChanged: (bool? value) {
+                                setDialogState(() {
+                                  tempSelection[index] = value ?? false;
+                                });
+                              },
+                              controlAffinity: ListTileControlAffinity.leading,
+                              activeColor: Colors.blue[600],
+                              checkColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Bottom Actions
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.grey[600],
+                              side: BorderSide(color: Colors.grey[400]!),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton.icon(
+                            onPressed: selectedCount > 0 ? () {
+                              setState(() {
+                                _selectedInspections = tempSelection;
+                                _showSelectedInspections = tempSelection.any((selected) => selected);
+                              });
+                              Navigator.of(context).pop();
+                            } : null,
+                            icon: const Icon(Icons.check_circle_outline),
+                            label: Text(
+                              selectedCount > 0 
+                                  ? 'Apply Selection ($selectedCount)'
+                                  : 'Select Inspections',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: selectedCount > 0 ? Colors.blue[600] : Colors.grey[400],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: selectedCount > 0 ? 4 : 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
+  // Add these variables to your class state
+List<bool> _selectedInspections = [];
+bool _showSelectedInspections = false;
+
+
+
   // Image picker instance
   final ImagePicker _picker = ImagePicker();
 
@@ -1090,68 +1437,141 @@ class _InspectionState extends State<Inspection> {
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 1,
       ),
-      body: Column(
-        children: [
-          // Top buttons row - ENHANCED COMMAND SECTION
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildTopButton(
-                    label: 'SERVICES',
-                    icon: Icons.build,
-                    color: const Color(0xFF4CAF50),
-                    onPressed: _showServicesDialog,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTopButton(
-                    label: 'PARTS',
-                    icon: Icons.precision_manufacturing,
-                    color: const Color(0xFF4CAF50),
-                    onPressed: _showPartsDialog,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTopButton(
-                    label: 'TecDoc',
-                    icon: Icons.library_books,
-                    color: const Color(0xFF2196F3),
-                    onPressed: _showTecDocDialog,
-                  ),
-                ),
-              ],
+      // Replace your entire body with this structure:
+body: SingleChildScrollView(
+  child: Column(
+    children: [
+      // Top buttons row - ENHANCED COMMAND SECTION
+      Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildTopButton(
+                label: 'SERVICES',
+                icon: Icons.build,
+                color: const Color(0xFF4CAF50),
+                onPressed: _showServicesDialog,
+              ),
             ),
-          ),
-
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.grey[200],
-          ),
-
-          // Services and Parts Summary
-          if (serviceItems.isNotEmpty || partsItems.isNotEmpty) ...[
-            _buildItemList("SERVICES (${serviceItems.length})", serviceItems),
-            _buildItemList("PARTS (${partsItems.length})", partsItems),
-            _buildSummary(),
-            Container(
-              height: 1,
-              color: Colors.grey[200],
-              margin: const EdgeInsets.symmetric(vertical: 8),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTopButton(
+                label: 'PARTS',
+                icon: Icons.precision_manufacturing,
+                color: const Color(0xFF4CAF50),
+                onPressed: _showPartsDialog,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTopButton(
+                label: 'TecDoc',
+                icon: Icons.library_books,
+                color: const Color(0xFF2196F3),
+                onPressed: _showTecDocDialog,
+              ),
             ),
           ],
+        ),
+      ),
 
-          // Inspection list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: inspections.length,
-              itemBuilder: (context, index) {
+      // Divider
+      Container(
+        height: 1,
+        color: Colors.grey[200],
+      ),
+
+      // Services and Parts Summary
+      if (serviceItems.isNotEmpty || partsItems.isNotEmpty) ...[
+        _buildItemList("SERVICES (${serviceItems.length})", serviceItems),
+        _buildItemList("PARTS (${partsItems.length})", partsItems),
+        _buildSummary(),
+        Container(
+          height: 1,
+          color: Colors.grey[200],
+          margin: const EdgeInsets.symmetric(vertical: 8),
+        ),
+      ],
+
+      // Inspection list - NO Expanded, NO ListView, just Column with children
+      Padding(
+  padding: const EdgeInsets.all(8),
+  child: Column(
+    children: [
+      // Show Inspections Button or Selected Inspections
+      if (!_showSelectedInspections)
+        Center(
+          child: ElevatedButton.icon(
+            onPressed: _showInspectionSelectionDialog,
+            icon: const Icon(Icons.checklist),
+            label: const Text('Show Inspections'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        )
+      else
+        Column(
+          children: [
+            // Header with selected count and actions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200] ?? Colors.blue),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.checklist, color: Colors.blue[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Selected Inspections (${_selectedInspections.where((selected) => selected).length})',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _showInspectionSelectionDialog,
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('Edit'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue[600],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showSelectedInspections = false;
+                        _selectedInspections = List.filled(inspections.length, false);
+                      });
+                    },
+                    icon: const Icon(Icons.clear, size: 16),
+                    label: const Text('Clear'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Selected Inspections List
+            ...List.generate(
+              inspections.length,
+              (index) {
+                if (_selectedInspections.length <= index || !_selectedInspections[index]) {
+                  return const SizedBox.shrink();
+                }
+                
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Container(
@@ -1218,21 +1638,21 @@ class _InspectionState extends State<Inspection> {
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: _images[index].isNotEmpty
+                                        color: _images.length > index && _images[index].isNotEmpty
                                             ? Colors.blue[100]
                                             : Colors.grey[300],
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: IconButton(
                                         icon: const Icon(Icons.camera_alt, size: 20),
-                                        color: _images[index].isNotEmpty
+                                        color: _images.length > index && _images[index].isNotEmpty
                                             ? Colors.blue[600]
                                             : Colors.grey[600],
                                         onPressed: () => _showImageSourceDialog(index),
                                         padding: EdgeInsets.zero,
                                       ),
                                     ),
-                                    if (_images[index].isNotEmpty)
+                                    if (_images.length > index && _images[index].isNotEmpty)
                                       Positioned(
                                         right: 0,
                                         top: 0,
@@ -1269,28 +1689,28 @@ class _InspectionState extends State<Inspection> {
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: _isRecording[index]
+                                        color: _isRecording.length > index && _isRecording[index]
                                             ? Colors.red[100]
-                                            : _voiceMessages[index].isNotEmpty
+                                            : _voiceMessages.length > index && _voiceMessages[index].isNotEmpty
                                             ? Colors.green[100]
                                             : Colors.grey[300],
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: IconButton(
                                         icon: Icon(
-                                          _isRecording[index] ? Icons.stop : Icons.mic,
+                                          _isRecording.length > index && _isRecording[index] ? Icons.stop : Icons.mic,
                                           size: 20,
                                         ),
-                                        color: _isRecording[index]
+                                        color: _isRecording.length > index && _isRecording[index]
                                             ? Colors.red[600]
-                                            : _voiceMessages[index].isNotEmpty
+                                            : _voiceMessages.length > index && _voiceMessages[index].isNotEmpty
                                             ? Colors.green[600]
                                             : Colors.grey[600],
                                         onPressed: () => _toggleRecording(index),
                                         padding: EdgeInsets.zero,
                                       ),
                                     ),
-                                    if (_voiceMessages[index].isNotEmpty)
+                                    if (_voiceMessages.length > index && _voiceMessages[index].isNotEmpty)
                                       Positioned(
                                         right: 0,
                                         top: 0,
@@ -1315,7 +1735,7 @@ class _InspectionState extends State<Inspection> {
                                           ),
                                         ),
                                       ),
-                                    if (_isRecording[index])
+                                    if (_isRecording.length > index && _isRecording[index])
                                       Positioned(
                                         bottom: 0,
                                         left: 0,
@@ -1327,7 +1747,7 @@ class _InspectionState extends State<Inspection> {
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: Text(
-                                            '${_recordingDurations[index]}s',
+                                            '${_recordingDurations.length > index ? _recordingDurations[index] : 0}s',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 8,
@@ -1347,14 +1767,16 @@ class _InspectionState extends State<Inspection> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: _customerRemarksControllers[index].text.isNotEmpty
+                                    color: _customerRemarksControllers.length > index && 
+                                           _customerRemarksControllers[index].text.isNotEmpty
                                         ? Colors.orange[100]
                                         : Colors.grey[300],
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: IconButton(
                                     icon: const Icon(Icons.person_outline, size: 20),
-                                    color: _customerRemarksControllers[index].text.isNotEmpty
+                                    color: _customerRemarksControllers.length > index && 
+                                           _customerRemarksControllers[index].text.isNotEmpty
                                         ? Colors.orange[600]
                                         : Colors.grey[600],
                                     onPressed: () => _showCustomerRemarksDialog(index),
@@ -1374,7 +1796,7 @@ class _InspectionState extends State<Inspection> {
                                         width: 32,
                                         height: 32,
                                         decoration: BoxDecoration(
-                                          color: _inspectionStatus[index] == 1
+                                          color: _inspectionStatus.length > index && _inspectionStatus[index] == 1
                                               ? const Color(0xFF4CAF50)
                                               : Colors.white,
                                           border: Border.all(
@@ -1383,7 +1805,7 @@ class _InspectionState extends State<Inspection> {
                                           ),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: _inspectionStatus[index] == 1
+                                        child: _inspectionStatus.length > index && _inspectionStatus[index] == 1
                                             ? const Icon(
                                           Icons.check,
                                           color: Colors.white,
@@ -1402,7 +1824,7 @@ class _InspectionState extends State<Inspection> {
                                         width: 32,
                                         height: 32,
                                         decoration: BoxDecoration(
-                                          color: _inspectionStatus[index] == 2
+                                          color: _inspectionStatus.length > index && _inspectionStatus[index] == 2
                                               ? const Color(0xFFFFC107)
                                               : Colors.white,
                                           border: Border.all(
@@ -1411,7 +1833,7 @@ class _InspectionState extends State<Inspection> {
                                           ),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: _inspectionStatus[index] == 2
+                                        child: _inspectionStatus.length > index && _inspectionStatus[index] == 2
                                             ? const Icon(
                                           Icons.warning,
                                           color: Colors.white,
@@ -1430,7 +1852,7 @@ class _InspectionState extends State<Inspection> {
                                         width: 32,
                                         height: 32,
                                         decoration: BoxDecoration(
-                                          color: _inspectionStatus[index] == 3
+                                          color: _inspectionStatus.length > index && _inspectionStatus[index] == 3
                                               ? const Color(0xFFF44336)
                                               : Colors.white,
                                           border: Border.all(
@@ -1439,7 +1861,7 @@ class _InspectionState extends State<Inspection> {
                                           ),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: _inspectionStatus[index] == 3
+                                        child: _inspectionStatus.length > index && _inspectionStatus[index] == 3
                                             ? const Icon(
                                           Icons.close,
                                           color: Colors.white,
@@ -1456,7 +1878,7 @@ class _InspectionState extends State<Inspection> {
                         ),
 
                         // Display images if available
-                        if (_images[index].isNotEmpty)
+                        if (_images.length > index && _images[index].isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 12),
                             child: Column(
@@ -1491,7 +1913,7 @@ class _InspectionState extends State<Inspection> {
                                                 height: 100,
                                                 decoration: BoxDecoration(
                                                   borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: Colors.grey[300]!),
+                                                  border: Border.all(color: Colors.grey[300] ?? Colors.grey),
                                                 ),
                                                 child: ClipRRect(
                                                   borderRadius: BorderRadius.circular(8),
@@ -1533,7 +1955,7 @@ class _InspectionState extends State<Inspection> {
                           ),
 
                         // Display voice messages if available
-                        if (_voiceMessages[index].isNotEmpty)
+                        if (_voiceMessages.length > index && _voiceMessages[index].isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 12),
                             child: Column(
@@ -1558,7 +1980,7 @@ class _InspectionState extends State<Inspection> {
                                       decoration: BoxDecoration(
                                         color: Colors.green[50],
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.green[200]!),
+                                        border: Border.all(color: Colors.green[200] ?? Colors.green),
                                       ),
                                       child: Row(
                                         children: [
@@ -1630,10 +2052,12 @@ class _InspectionState extends State<Inspection> {
                                         decoration: BoxDecoration(
                                           color: Colors.blue[50],
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.blue[200]!),
+                                          border: Border.all(color: Colors.blue[200] ?? Colors.blue),
                                         ),
                                         child: TextField(
-                                          controller: _partsControllers[index],
+                                          controller: _partsControllers.length > index 
+                                              ? _partsControllers[index] 
+                                              : TextEditingController(),
                                           decoration: const InputDecoration(
                                             hintText: 'Enter parts...',
                                             border: InputBorder.none,
@@ -1677,10 +2101,12 @@ class _InspectionState extends State<Inspection> {
                                         decoration: BoxDecoration(
                                           color: Colors.green[50],
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.green[200]!),
+                                          border: Border.all(color: Colors.green[200] ?? Colors.green),
                                         ),
                                         child: TextField(
-                                          controller: _serviceControllers[index],
+                                          controller: _serviceControllers.length > index 
+                                              ? _serviceControllers[index] 
+                                              : TextEditingController(),
                                           decoration: const InputDecoration(
                                             hintText: 'Enter service notes...',
                                             border: InputBorder.none,
@@ -1744,10 +2170,12 @@ class _InspectionState extends State<Inspection> {
                                   decoration: BoxDecoration(
                                     color: Colors.orange[50],
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.orange[200]!),
+                                    border: Border.all(color: Colors.orange[200] ?? Colors.orange),
                                   ),
                                   child: TextField(
-                                    controller: _customerRemarksControllers[index],
+                                    controller: _customerRemarksControllers.length > index 
+                                        ? _customerRemarksControllers[index] 
+                                        : TextEditingController(),
                                     maxLines: 2,
                                     decoration: const InputDecoration(
                                       hintText: 'Customer concerns or special requests...',
@@ -1767,9 +2195,14 @@ class _InspectionState extends State<Inspection> {
                 );
               },
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+    ],
+  ),
+)
+    ],
+  ),
+),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           _showInspectionSummary();
@@ -1830,206 +2263,771 @@ class _InspectionState extends State<Inspection> {
     );
   }
 
-  void _showInspectionSummary() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Inspection Summary'),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 400,
-            child: SingleChildScrollView(
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      const SizedBox(width: 12),
+      Text(
+        title,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildFinancialCard(String title, List items, double total, IconData icon, Color color, {required bool isService}) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: color.withOpacity(0.2)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total (${items.length} items)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  color: color,
+                ),
+              ),
+              SizedBox(height: 5,),
+              Text(
+                '₹${total.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        ...items.take(3).map((item) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  item['item_name'] ?? '',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              Text(
+                isService 
+                  ? '₹${item['rate']}'
+                  : '${item['qty']} × ₹${item['rate']}',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        )),
+        
+        if (items.length > 3)
+          Text(
+            '+${items.length - 3} more items',
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+Widget _buildStatusChip(String label, int count, Color color) {
+  return Expanded(
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            '$count',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildInspectionCard(int index) {
+  String statusText = '';
+  Color statusColor = Colors.grey;
+  IconData statusIcon = Icons.pending;
+
+  switch (_inspectionStatus[index]) {
+    case 1:
+      statusText = 'PASS';
+      statusColor = Colors.green;
+      statusIcon = Icons.check_circle;
+      break;
+    case 2:
+      statusText = 'WARNING';
+      statusColor = Colors.amber;
+      statusIcon = Icons.warning;
+      break;
+    case 3:
+      statusText = 'FAIL';
+      statusColor = Colors.red;
+      statusIcon = Icons.cancel;
+      break;
+    default:
+      statusText = 'PENDING';
+      statusColor = Colors.grey;
+      statusIcon = Icons.pending;
+  }
+
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: statusColor.withOpacity(0.2)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  inspections[index],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, color: Colors.white, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      statusText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          if (_images.length > index && _images[index].isNotEmpty ||
+              _voiceMessages.length > index && _voiceMessages[index].isNotEmpty ||
+              _partsControllers.length > index && _partsControllers[index].text.isNotEmpty ||
+              _serviceControllers.length > index && _serviceControllers[index].text.isNotEmpty ||
+              _customerRemarksControllers.length > index && _customerRemarksControllers[index].text.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Services and Parts Summary
-                  if (serviceItems.isNotEmpty || partsItems.isNotEmpty) ...[
-                    const Text(
-                      'Services & Parts Overview',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 8),
-
-                    if (serviceItems.isNotEmpty) ...[
-                      Text('Services (${serviceItems.length}):',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ...serviceItems.map((service) => Padding(
-                        padding: const EdgeInsets.only(left: 16, bottom: 4),
-                        child: Text('• ${service['item_name']} - ₹${service['rate']}'),
-                      )),
-                      const SizedBox(height: 8),
-                    ],
-
-                    if (partsItems.isNotEmpty) ...[
-                      Text('Parts (${partsItems.length}):',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ...partsItems.map((part) => Padding(
-                        padding: const EdgeInsets.only(left: 16, bottom: 4),
-                        child: Text('• ${part['item_name']} - Qty: ${part['qty']} × ₹${part['rate']}'),
-                      )),
-                      const SizedBox(height: 8),
-                    ],
-
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Total Cost:', style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text('₹${(serviceItems.fold(0.0, (sum, item) => sum + (item['qty'] ?? 1) * (item['rate'] ?? 0)) +
-                              partsItems.fold(0.0, (sum, item) => sum + (item['qty'] ?? 1) * (item['rate'] ?? 0))).toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-
-                    const Divider(height: 24),
-                  ],
-
-                  // Individual Inspection Results
-                  const Text(
-                    'Inspection Results',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: inspections.length,
-                    itemBuilder: (context, index) {
-                      String statusText = '';
-                      Color statusColor = Colors.grey;
-
-                      switch (_inspectionStatus[index]) {
-                        case 1:
-                          statusText = 'PASS';
-                          statusColor = Colors.green;
-                          break;
-                        case 2:
-                          statusText = 'WARNING';
-                          statusColor = Colors.amber;
-                          break;
-                        case 3:
-                          statusText = 'FAIL';
-                          statusColor = Colors.red;
-                          break;
-                        default:
-                          statusText = 'PENDING';
-                          statusColor = Colors.grey;
-                      }
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      inspections[index],
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: statusColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      statusText,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (_images[index].isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Photos: ${_images[index].length}',
-                                    style: const TextStyle(fontSize: 12, color: Colors.blue),
-                                  ),
-                                ),
-                              if (_voiceMessages[index].isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Voice Messages: ${_voiceMessages[index].length}',
-                                    style: const TextStyle(fontSize: 12, color: Colors.green),
-                                  ),
-                                ),
-                              if (_partsControllers[index].text.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Parts: ${_partsControllers[index].text}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              if (_serviceControllers[index].text.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Service: ${_serviceControllers[index].text}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              if (_customerRemarksControllers[index].text.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Customer Remarks: ${_customerRemarksControllers[index].text}',
-                                    style: const TextStyle(fontSize: 12, color: Colors.orange),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  if (_images.length > index && _images[index].isNotEmpty)
+                    _buildDetailRow(Icons.camera_alt, 'Photos', '${_images[index].length}', Colors.blue),
+                  
+                  if (_voiceMessages.length > index && _voiceMessages[index].isNotEmpty)
+                    _buildDetailRow(Icons.mic, 'Voice Messages', '${_voiceMessages[index].length}', Colors.green),
+                  
+                  if (_partsControllers.length > index && _partsControllers[index].text.isNotEmpty)
+                    _buildDetailRow(Icons.build_circle, 'Parts', _partsControllers[index].text, Colors.blue),
+                  
+                  if (_serviceControllers.length > index && _serviceControllers[index].text.isNotEmpty)
+                    _buildDetailRow(Icons.settings, 'Service', _serviceControllers[index].text, Colors.green),
+                  
+                  if (_customerRemarksControllers.length > index && _customerRemarksControllers[index].text.isNotEmpty)
+                    _buildDetailRow(Icons.person_outline, 'Customer Remarks', _customerRemarksControllers[index].text, Colors.orange),
                 ],
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Report generated successfully!')),
-                );
-              },
-              child: const Text('Export'),
-            ),
           ],
-        );
-      },
-    );
-  }
+        ],
+      ),
+    ),
+  );
 }
 
+Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 12),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+  void _showInspectionSummary() {
+  // Calculate totals
+  double servicesTotal = serviceItems.fold(0.0, (sum, item) => sum + (item['qty'] ?? 1) * (item['rate'] ?? 0));
+  double partsTotal = partsItems.fold(0.0, (sum, item) => sum + (item['qty'] ?? 1) * (item['rate'] ?? 0));
+  double grandTotal = servicesTotal + partsTotal;
+  
+  // Count inspection statuses
+  int passCount = _inspectionStatus.where((status) => status == 1).length;
+  int warningCount = _inspectionStatus.where((status) => status == 2).length;
+  int failCount = _inspectionStatus.where((status) => status == 3).length;
+  int pendingCount = _inspectionStatus.where((status) => status == 0 || status == null).length;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 16,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.95,
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.green[50]!,
+                Colors.white,
+              ],
+            ),
+          ),
+          child: Column(
+            children: [
+              // Header Section
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.green[600]!,
+                      Colors.green[700]!,
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.summarize,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Inspection Summary',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Complete overview of services, parts & inspections',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Summary Cards Row
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Total Cost Card
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.blue[600]!, Colors.blue[700]!],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.currency_rupee,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '₹${grandTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'Total Cost',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // Items Count Card
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.purple[600]!, Colors.purple[700]!],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.purple.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.inventory,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${serviceItems.length + partsItems.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'Total Items',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // Status Card
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.orange[600]!, Colors.orange[700]!],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.assessment,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${passCount}/${_inspectionStatus.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'Passed',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content Section
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Services & Parts Section
+                      if (serviceItems.isNotEmpty || partsItems.isNotEmpty) ...[
+                        _buildSectionHeader(
+                          'Financial Overview',
+                          Icons.account_balance_wallet,
+                          Colors.blue[600]!,
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        Row(
+                          children: [
+                            // Services Column
+                            if (serviceItems.isNotEmpty)
+                              Expanded(
+                                child: _buildFinancialCard(
+                                  'Services',
+                                  serviceItems,
+                                  servicesTotal,
+                                  Icons.build,
+                                  Colors.green,
+                                  isService: true,
+                                ),
+                              ),
+                            
+                            if (serviceItems.isNotEmpty && partsItems.isNotEmpty)
+                              const SizedBox(width: 16),
+                            
+                            // Parts Column
+                            if (partsItems.isNotEmpty)
+                              Expanded(
+                                child: _buildFinancialCard(
+                                  'Parts',
+                                  partsItems,
+                                  partsTotal,
+                                  Icons.settings,
+                                  Colors.orange,
+                                  isService: false,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Inspection Results Section
+                      _buildSectionHeader(
+                        'Inspection Results',
+                        Icons.checklist,
+                        Colors.green[600]!,
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Status Overview
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildStatusChip('Pass', passCount, Colors.green),
+                            const SizedBox(width: 8),
+                            _buildStatusChip('Warning', warningCount, Colors.amber),
+                            const SizedBox(width: 8),
+                            _buildStatusChip('Fail', failCount, Colors.red),
+                            const SizedBox(width: 8),
+                            _buildStatusChip('Pending', pendingCount, Colors.grey),
+                          ],
+                        ),
+                      ),
+
+                      // Individual Inspections
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _selectedInspections.length,
+                        itemBuilder: (context, index) {
+                          // Only show selected inspections
+                          if (_selectedInspections.length <= index || !_selectedInspections[index]) {
+                            return const SizedBox.shrink();
+                          }
+                          
+                          return _buildInspectionCard(index);
+                        },
+                      ),
+                      
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom Actions
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Close'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.grey[600],
+                          side: BorderSide(color: Colors.grey[400]!),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text('Report exported successfully!'),
+                                ],
+                              ),
+                              backgroundColor: Colors.green[600],
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.download),
+                        label: const Text('Export Report'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+}
 // Voice Message Data Model
 class VoiceMessage {
   final String id;

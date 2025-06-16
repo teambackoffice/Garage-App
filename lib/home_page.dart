@@ -980,7 +980,7 @@ class _GarageHomePageState extends State<GarageHomePage> {
             const CircularProgressIndicator(),
             const SizedBox(height: 24),
             Text(
-              'Loading dashboard...',
+              'Loading dashboard.....',
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],
@@ -1000,7 +1000,9 @@ class _GarageHomePageState extends State<GarageHomePage> {
               SizedBox(height: h*0.01),
               _buildQuickActions(),
              SizedBox(height: h*0.01),
+            
             ],
+            
           ),
         ),
       ),

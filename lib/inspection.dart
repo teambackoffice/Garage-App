@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -8,13 +13,17 @@ import 'main.dart';
 double w = 0; // width reference
 
 class Inspection extends StatefulWidget {
-  const Inspection({super.key});
+  final String orderId;
+
+  const Inspection({super.key, required this.orderId, });
 
   @override
   State<Inspection> createState() => _InspectionState();
 }
 
 class _InspectionState extends State<Inspection> {
+
+  bool _isLoading = false;
   final List<String> inspections = [
     'Battery Inspection',
     'Engine Inspection',
@@ -24,6 +33,12 @@ class _InspectionState extends State<Inspection> {
 
   // Store multiple images per item
   final List<List<File>> _images = List.generate(4, (index) => <File>[]);
+  List<File> allImages = [];
+
+void prepareImages() {
+  allImages = _images.expand((imageList) => imageList).toList();
+}
+
 
   // Store status for each inspection (0 = none, 1 = green, 2 = yellow, 3 = red)
   final List<int> _inspectionStatus = List<int>.filled(4, 0);
@@ -37,6 +52,14 @@ class _InspectionState extends State<Inspection> {
 
   // Store voice messages for each inspection
   final List<List<VoiceMessage>> _voiceMessages = List.generate(4, (index) => <VoiceMessage>[]);
+  
+
+
+List<InspectionItem> _allInspections = [];
+List<bool> _tempSelection = [];
+bool _IsLoading = false;
+
+
 
   // Voice recording states
   final List<bool> _isRecording = List<bool>.filled(4, false);
@@ -269,7 +292,7 @@ class _InspectionState extends State<Inspection> {
                       ),
                       child: ListView.builder(
                         padding: const EdgeInsets.all(8),
-                        itemCount: inspections.length,
+                        itemCount: _allInspections.length,
                         itemBuilder: (context, index) {
                           bool isSelected = tempSelection[index];
                           
@@ -286,7 +309,7 @@ class _InspectionState extends State<Inspection> {
                             child: CheckboxListTile(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               title: Text(
-                                inspections[index],
+                                _allInspections[index].name,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -1401,6 +1424,13 @@ bool _showSelectedInspections = false;
       ),
     );
   }
+  @override
+initState(){
+  super.initState();
+  fetchAllInspections();
+  initializeInspections();
+}
+//  List fetchedInspections
 
   @override
   void dispose() {
@@ -2440,17 +2470,17 @@ Widget _buildInspectionCard(int index) {
 
   switch (_inspectionStatus[index]) {
     case 1:
-      statusText = 'PASS';
+      statusText = 'Satisfied';
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
       break;
     case 2:
-      statusText = 'WARNING';
+      statusText = 'Immediate Attention';
       statusColor = Colors.amber;
       statusIcon = Icons.warning;
       break;
     case 3:
-      statusText = 'FAIL';
+      statusText = 'Attention in Future';
       statusColor = Colors.red;
       statusIcon = Icons.cancel;
       break;
@@ -2573,6 +2603,308 @@ Widget _buildInspectionCard(int index) {
     ),
   );
 }
+// Model class for inspection data
+
+// Get session ID
+Future<String?> _getSessionId() async {
+  final prefs = await SharedPreferences.getInstance();
+  final sid = prefs.getString('sid');
+  debugPrint('Retrieved session ID: $sid');
+  return sid;
+}
+
+// Fetch all inspections from API
+Future<List<InspectionItem>> fetchAllInspections() async {
+  String? sessionId = await _getSessionId();
+
+  if (sessionId == null) {
+    throw Exception('No session ID found. Please login first.');
+  }
+
+  try {
+    print('🔍 Fetching inspections from API...');
+
+    var response = await http.get(
+      Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_inspection'),
+      headers: {
+        'Cookie': 'sid=$sessionId',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('📥 Inspections API Status: ${response.statusCode}');
+    print('📥 Inspections API Response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+      List<dynamic> inspectionData;
+
+      // ✅ Correct response parsing
+      if (jsonResponse.containsKey('message') &&
+          jsonResponse['message'].containsKey('data')) {
+        inspectionData = jsonResponse['message']['data'] as List<dynamic>;
+      } else {
+        throw Exception('Invalid API response structure');
+      }
+
+      List<InspectionItem> inspections = inspectionData
+          .map((item) => InspectionItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      print('✅ Fetched ${inspections.length} inspections:');
+      for (var inspection in inspections) {
+        print('  - ${inspection.name}');
+      }
+
+      return inspections;
+    } else {
+      throw Exception('Failed to fetch inspections: ${response.statusCode} - ${response.body}');
+    }
+  } catch (e) {
+    print('❌ Error fetching inspections: $e');
+    throw Exception('Failed to fetch inspections: $e');
+  }
+}
+
+
+// Initialize inspections when the screen loads
+Future<void> initializeInspections() async {
+  try {
+    setState(() {
+      _isLoading = true;
+    });
+
+    List<InspectionItem> fetchedInspections = await fetchAllInspections();
+
+    setState(() {
+      _allInspections = fetchedInspections; // ✅ Save the API data
+      _tempSelection = List<bool>.filled(_allInspections.length, false); // ✅ Selection list
+      _IsLoading = false;
+    });
+
+    print('🎉 Inspections initialized successfully');
+  } catch (e) {
+    setState(() {
+      _IsLoading = false;
+    });
+    showError('Failed to load inspections: $e');
+  }
+}
+
+
+// Export report using API-fetched inspection names
+Future<void> exportReport() async {
+  setState(() {
+    _isLoading = true;
+  });
+
+  String? sessionId = await _getSessionId();
+  
+  if (sessionId == null || sessionId.isEmpty) {
+    setState(() {
+      _isLoading = false;
+    });
+    showError('No session found. Please login first.');
+    return;
+  }
+
+  // Status mapping: 0 = not selected, 1 = Satisfied, 2 = Immediate Attention, 3 = Attention in Future
+  List<String> statusNames = ['', 'Satisfied', 'Immediate Attention', 'Attention in Future'];
+  
+  // Get selected inspections using API-fetched names
+  List<Map<String, dynamic>> selectedInspections = [];
+  for (int i = 0; i < inspections.length; i++) {
+    int statusIndex = _inspectionStatus[i];
+    if (statusIndex > 0 && statusIndex < statusNames.length) {
+      selectedInspections.add({
+        "inspection_type": inspections[i], // Now uses API-fetched names
+        "status": statusNames[statusIndex]
+      });
+    }
+  }
+
+  if (selectedInspections.isEmpty) {
+    setState(() {
+      _isLoading = false;
+    });
+    showError('Please select at least one inspection status before exporting.');
+    return;
+  }
+
+  String formattedDate = DateTime.now().toIso8601String().split('T').first;
+  
+  List<String> customerRemarks = _customerRemarksControllers
+      .where((controller) => controller.text.isNotEmpty)
+      .map((controller) => controller.text)
+      .toList();
+
+  // Create the inspection table to match the exact Postman format
+  String formattedInspectionTable = selectedInspections.map((inspection) {
+    return '{"inspection_type": "${inspection['inspection_type']}", "status": "${inspection['status']}"}';
+  }).join(',\n ');
+  formattedInspectionTable = '[$formattedInspectionTable]';
+
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.create_inspection'),
+  );
+
+  request.headers.addAll({
+    'Cookie': 'sid=$sessionId',
+    'Accept': 'application/json',
+    'User-Agent': 'Flutter App',
+  });
+
+  request.fields.addAll({
+    'repair_order_id': widget.orderId,
+    'inspection_date': formattedDate,
+    'remarks': customerRemarks.join(', '),
+    'Inspection Table': formattedInspectionTable,
+  });
+
+  // Add images and voice messages (same as before)
+  int imagesAdded = 0;
+  if (allImages != null && allImages.isNotEmpty) {
+    for (int i = 0; i < allImages.length; i++) {
+      File image = allImages[i];
+      if (await image.exists()) {
+        try {
+          request.files.add(await http.MultipartFile.fromPath('images', image.path));
+          imagesAdded++;
+          print('✅ Added image ${i + 1}: ${image.path}');
+        } catch (e) {
+          print('❌ Error adding image $i: $e');
+        }
+      }
+    }
+  }
+
+  // Voice messages processing
+  int voiceMessagesAdded = 0;
+  if (_voiceMessages != null && _voiceMessages.isNotEmpty) {
+    for (var voiceList in _voiceMessages) {
+      for (var voiceMessage in voiceList) {
+        if (voiceMessage.filePath != null && voiceMessage.filePath.isNotEmpty) {
+          String finalPath = await _resolveVoiceFilePath(voiceMessage.filePath);
+          File voiceFile = File(finalPath);
+          if (await voiceFile.exists()) {
+            try {
+              request.files.add(await http.MultipartFile.fromPath('voiceMessages', finalPath));
+              voiceMessagesAdded++;
+              print('✅ Added voice message: $finalPath');
+            } catch (e) {
+              print('❌ Error adding voice message: $e');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  print('=== 📤 FINAL REQUEST DEBUG ===');
+  print('🔗 URL: ${request.url}');
+  print('🔑 Session ID: $sessionId');
+  print('📋 Inspection Table (API-based):');
+  print(formattedInspectionTable);
+  print('📝 All Fields: ${request.fields}');
+  print('📎 Files: $imagesAdded images, $voiceMessagesAdded voice messages');
+  print('✅ Selected inspections: $selectedInspections');
+
+  try {
+    print('🚀 Sending request...');
+    http.StreamedResponse response = await request.send();
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    String responseBody = await response.stream.bytesToString();
+    
+    print('📥 Response Status: ${response.statusCode}');
+    print('📥 Response Body: $responseBody');
+
+    if (response.statusCode == 200) {
+      print('🎉 SUCCESS! Report exported with API-based inspection names');
+      Navigator.of(context).pop();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('Report exported successfully!\nInspections: ${selectedInspections.length}, Images: $imagesAdded, Voice: $voiceMessagesAdded'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } else {
+      print('❌ API Error: ${response.statusCode}');
+      showError('API Error: ${response.statusCode}\nResponse: $responseBody');
+    }
+  } catch (e) {
+    print('💥 Exception: $e');
+    setState(() {
+      _isLoading = false;
+    });
+    showError('Network Error: ${e.toString()}');
+  }
+}
+
+// Helper method to resolve voice file paths (same as before)
+Future<String> _resolveVoiceFilePath(String originalPath) async {
+  if (originalPath.startsWith('/')) {
+    return originalPath;
+  }
+  
+  List<Directory> directoriesToTry = [];
+  
+  try {
+    directoriesToTry.add(await getApplicationDocumentsDirectory());
+    directoriesToTry.add(await getApplicationSupportDirectory());
+    directoriesToTry.add(await getTemporaryDirectory());
+  } catch (e) {
+    print('Error getting directories: $e');
+  }
+  
+  for (Directory dir in directoriesToTry) {
+    String testPath = '${dir.path}/$originalPath';
+    if (await File(testPath).exists()) {
+      return testPath;
+    }
+  }
+  
+  return originalPath;
+}
+// Call this before exportReport to test your session
+// await testSessionAuth();
+  void showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Error: $message'),
+          ],
+        ),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
 
 Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
   return Padding(
@@ -2965,60 +3297,51 @@ Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
                   ),
                 ),
                 child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
-                        label: const Text('Close'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.grey[600],
-                          side: BorderSide(color: Colors.grey[400]!),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close),
+            label: const Text('Close'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.grey[600],
+              side: BorderSide(color: Colors.grey[400]!),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: ElevatedButton.icon(
+            onPressed: _isLoading ? null : exportReport,
+            icon: _isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Row(
-                                children: [
-                                  Icon(Icons.check_circle, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text('Report exported successfully!'),
-                                ],
-                              ),
-                              backgroundColor: Colors.green[600],
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.download),
-                        label: const Text('Export Report'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  )
+                : const Icon(Icons.download),
+            label: Text(_isLoading ? 'Exporting...' : 'Export Report'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[600],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
               ),
             ],
           ),
@@ -3085,6 +3408,47 @@ class TecDocItem {
     required this.price,
   });
 }
+class ApiResponse {
+  final Message message;
+
+  ApiResponse({required this.message});
+
+  factory ApiResponse.fromJson(Map<String, dynamic> json) {
+    return ApiResponse(
+      message: Message.fromJson(json['message']),
+    );
+  }
+}
+
+class Message {
+  final String status;
+  final List<InspectionItem> data;
+
+  Message({required this.status, required this.data});
+
+  factory Message.fromJson(Map<String, dynamic> json) {
+    var inspectionsJson = json['data'] as List<dynamic>;
+    return Message(
+      status: json['status'] ?? '',
+      data: inspectionsJson
+          .map((item) => InspectionItem.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+class InspectionItem {
+  final String name;
+
+  InspectionItem({required this.name});
+
+  factory InspectionItem.fromJson(Map<String, dynamic> json) {
+    return InspectionItem(
+      name: json['name'] ?? '',
+    );
+  }
+}
+
 
 // Full screen image viewer
 class FullScreenImageViewer extends StatelessWidget {

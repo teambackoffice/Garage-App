@@ -201,7 +201,7 @@ class _WorkInProgressState extends State<WorkInProgress> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>  Inspection( ),
+                          builder: (context) =>  Inspection( orderId : orderId,),
 
                         ),
                       );

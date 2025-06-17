@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -15,10 +16,11 @@ double w = 0; // width reference
 
 class Inspection extends StatefulWidget {
   final String orderId;
+  final String ph_number;
 
   
 
-  const Inspection({super.key, required this.orderId, });
+  const Inspection({super.key, required this.orderId, required this.ph_number, });
 
   @override
   State<Inspection> createState() => _InspectionState();
@@ -2947,78 +2949,39 @@ Future<void> exportReport() async {
     }
   }
 
-  // ✅ FIXED: Add voice messages with 'audio' field name (already correct)
+  // ✅ FIXED: Add voice messages with 'audio' field name - SIMPLIFIED
   int audioAdded = 0;
   for (int i = 0; i < _allInspections.length; i++) {
-  print("=== Inspection $i: ${_allInspections[i].name} ===");
-  print("_voiceMessages.length: ${_voiceMessages.length}");
-  print("_selectedInspections[$i]: ${_selectedInspections[i]}");
-  print("_voiceMessages[$i].length: ${_voiceMessages[i].length}");
-  print("_voiceMessages[$i].isNotEmpty: ${_voiceMessages[i].isNotEmpty}");
-  
-  if (_selectedInspections[i] && _voiceMessages.length > i && _voiceMessages[i].isNotEmpty) {
-    print("✅ Passed first condition check");
-    
-    for (var voiceMessage in _voiceMessages[i]) {
-      print("Processing voice message: ${voiceMessage.id}");
-      print("FilePath: '${voiceMessage.filePath}'");
-      print("FilePath.isNotEmpty: ${voiceMessage.filePath.isNotEmpty}");
-      
-      if (voiceMessage.filePath.isNotEmpty) {
-        print("✅ FilePath is not empty");
-        
-        String finalPath = await _resolveVoiceFilePath(voiceMessage.filePath);
-        print("Final resolved path: '$finalPath'");
-        
-        File voiceFile = File(finalPath);
-        bool fileExists = await voiceFile.exists();
-        print("File exists: $fileExists");
-        
-        if (fileExists) {
-          print("✅ File exists, entering try block");
-          try {
-            print("=======Starts Here====");
-            request.files.add(await http.MultipartFile.fromPath('audio', finalPath));
-            audioAdded++;
-            print('✅ Added audio from ${_allInspections[i].name}: $finalPath');
-          } catch (e) {
-            print('❌ Error adding audio: $e');
+    if (_selectedInspections[i] && _voiceMessages.length > i && _voiceMessages[i].isNotEmpty) {
+      for (var voiceMessage in _voiceMessages[i]) {
+        if (voiceMessage.filePath.isNotEmpty) {
+          // Use the path directly - no need to resolve it
+          File voiceFile = File(voiceMessage.filePath);
+          
+          if (await voiceFile.exists()) {
+            try {
+              request.files.add(await http.MultipartFile.fromPath('audio', voiceMessage.filePath));
+              audioAdded++;
+              print('✅ Added audio from ${_allInspections[i].name}: ${voiceMessage.filePath}');
+            } catch (e) {
+              print('❌ Error adding audio: $e');
+            }
+          } else {
+            print("❌ File does not exist at: ${voiceMessage.filePath}");
           }
-        } else {
-          print("❌ File does not exist at: $finalPath");
         }
-      } else {
-        print("❌ FilePath is empty");
       }
     }
-  } else {
-    print("❌ Failed first condition check");
   }
-}
 
-  print('📤 Final Request (matching your example format):');
-  print('request.fields.addAll({');
-  request.fields.forEach((key, value) {
-    print("  '$key': '$value',");
-  });
-  print('});');
-  
-  print('Files:');
-  for (var file in request.files) {
-    print("request.files.add(await http.MultipartFile.fromPath('${file.field}', '${file.filename}'));");
-  }
-  
-  print('📊 Summary:');
+  print('📤 Final Request Summary:');
   print('  Photos: $imagesAdded (using "photo" field)');
   print('  Audio: $audioAdded (using "audio" field)');
   print('  Inspections: ${selectedInspections.length}');
   print('  Customer Remarks: ${customerRemarks.length}');
-  
-  print('🔍 Inspection Table format:');
-  print(formattedInspectionTable);
 
   try {
-    print('🚀 Sending request in correct format...');
+    print('🚀 Sending request...');
     http.StreamedResponse response = await request.send();
 
     setState(() {
@@ -3030,12 +2993,20 @@ Future<void> exportReport() async {
     print('📥 Response Body: $responseBody');
 
     if (response.statusCode == 200) {
-      print('🎉 SUCCESS! Data exported in correct format');
+      print('🎉 SUCCESS! Data exported successfully');
+      
+      // Create the report link with your specific format
+      String reportLink = 'http://127.0.0.1:8000/inspections?repair_order=${widget.orderId}';
+      print('🔗 Report Link: $reportLink');
+      
+      // Send to WhatsApp
+      await _sendToWhatsApp(reportLink);
+      
       Navigator.of(context).pop();
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Report exported successfully!\nInspections: ${selectedInspections.length}, Photos: $imagesAdded, Audio: $audioAdded'),
+          content: Text('Report exported and sent to WhatsApp!\nInspections: ${selectedInspections.length}, Photos: $imagesAdded, Audio: $audioAdded'),
           backgroundColor: Colors.green[600],
           duration: Duration(seconds: 4),
         ),
@@ -3050,6 +3021,23 @@ Future<void> exportReport() async {
       _isLoading = false;
     });
     showError('Export Error: ${e.toString()}');
+  }
+}
+
+// Simple WhatsApp function
+Future<void> _sendToWhatsApp(String reportLink) async {
+  try {
+    String phone = "+1234567890"; // PUT YOUR PHONE NUMBER HERE
+    String message = "🔧 Vehicle Inspection Report\n\n📋 Order: ${widget.orderId}\n📅 Date: ${DateTime.now().toLocal().toString().split(' ')[0]}\n\n🔗 View Report: $reportLink\n\nThank you for choosing our service!";
+    
+    String url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+    
+    print('📱 Opening WhatsApp...');
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    print('✅ WhatsApp opened successfully');
+  } catch (e) {
+    print('❌ Error opening WhatsApp: $e');
+    showError('Error opening WhatsApp: $e');
   }
 }
 

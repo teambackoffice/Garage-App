@@ -7,8 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class WorkInProgress extends StatefulWidget {
   final String? services;
   final String? parts;
+  final String phnumber;
 
-  const WorkInProgress({super.key, required this.services, required this.parts});
+  const WorkInProgress({super.key, required this.services, required this.parts, required this.phnumber});
 
   @override
   State<WorkInProgress> createState() => _WorkInProgressState();
@@ -201,7 +202,7 @@ class _WorkInProgressState extends State<WorkInProgress> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>  Inspection( orderId : orderId,),
+                          builder: (context) =>  Inspection( orderId : orderId,ph_number :widget.phnumber),
 
                         ),
                       );

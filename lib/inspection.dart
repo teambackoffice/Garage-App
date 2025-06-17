@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:async';
@@ -15,6 +16,8 @@ double w = 0; // width reference
 class Inspection extends StatefulWidget {
   final String orderId;
 
+  
+
   const Inspection({super.key, required this.orderId, });
 
   @override
@@ -22,6 +25,7 @@ class Inspection extends StatefulWidget {
 }
 
 class _InspectionState extends State<Inspection> {
+  
 
   bool _isLoading = false;
   final List<String> inspections = [
@@ -41,7 +45,7 @@ void prepareImages() {
 
 
   // Store status for each inspection (0 = none, 1 = green, 2 = yellow, 3 = red)
-  final List<int> _inspectionStatus = List<int>.filled(4, 0);
+  final List<int> _inspectionStatus = [];
 
   // Store parts and service data for each inspection
   final List<TextEditingController> _partsControllers = List.generate(4, (index) => TextEditingController());
@@ -49,14 +53,16 @@ void prepareImages() {
 
   // Store customer remarks for each inspection
   final List<TextEditingController> _customerRemarksControllers = List.generate(4, (index) => TextEditingController());
-
+   
   // Store voice messages for each inspection
   final List<List<VoiceMessage>> _voiceMessages = List.generate(4, (index) => <VoiceMessage>[]);
+   final List<AudioRecorder> _audioRecorders = List.generate(4, (index) => AudioRecorder());
   
 
 
 List<InspectionItem> _allInspections = [];
-List<bool> _tempSelection = [];
+List<bool> _selectedInspections = [];
+
 bool _IsLoading = false;
 
 
@@ -380,11 +386,17 @@ bool _IsLoading = false;
                           child: ElevatedButton.icon(
                             onPressed: selectedCount > 0 ? () {
                               setState(() {
-                                _selectedInspections = tempSelection;
-                                _showSelectedInspections = tempSelection.any((selected) => selected);
-                              });
-                              Navigator.of(context).pop();
-                            } : null,
+      _selectedInspections = tempSelection;
+      _showSelectedInspections = tempSelection.any((selected) => selected);
+      
+      // Ensure _inspectionStatus has the same length (use clear/addAll for final lists)
+      if (_inspectionStatus.length != _allInspections.length) {
+        _inspectionStatus.clear();
+        _inspectionStatus.addAll(List<int>.filled(_allInspections.length, 0));
+      }
+    });
+    Navigator.of(context).pop();
+  } : null,
                             icon: const Icon(Icons.check_circle_outline),
                             label: Text(
                               selectedCount > 0 
@@ -417,7 +429,6 @@ bool _IsLoading = false;
 
 
   // Add these variables to your class state
-List<bool> _selectedInspections = [];
 bool _showSelectedInspections = false;
 
 
@@ -426,66 +437,194 @@ bool _showSelectedInspections = false;
   final ImagePicker _picker = ImagePicker();
 
   // Voice recording functions
-  void _startRecording(int index) {
-    setState(() {
-      _isRecording[index] = true;
-      _recordingDurations[index] = 0;
-    });
-
-    _recordingTimers[index] = Timer.periodic(const Duration(seconds: 1), (timer) {
+ void _startRecording(int index) async {
+  print("🟢 Starting recording for index: $index");
+  
+  if (index < 0 || index >= _isRecording.length) return;
+  if (_isRecording[index]) return;
+  
+  try {
+    if (await _audioRecorders[index].hasPermission()) {
+      Directory appDocDir = await getApplicationDocumentsDirectory();
+      String fileName = 'voice_${index}_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      String fullPath = '${appDocDir.path}/$fileName';
+      
+      await _audioRecorders[index].start(
+        const RecordConfig(encoder: AudioEncoder.aacLc),
+        path: fullPath,
+      );
+      
+      // THIS IS THE CRITICAL PART - Set state AFTER recording starts successfully
       setState(() {
-        _recordingDurations[index]++;
+        _isRecording[index] = true;
+        _recordingDurations[index] = 0;
       });
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Recording voice message for ${inspections[index]}...'),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void _stopRecording(int index) {
-    _recordingTimers[index]?.cancel();
-    _recordingTimers[index] = null;
-
-    final duration = _recordingDurations[index];
-
+      
+      print("✅ State updated - _isRecording[$index]: ${_isRecording[index]}");
+      
+      // Start timer
+      _recordingTimers[index] = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {
+            _recordingDurations[index]++;
+          });
+          print("⏱️ Recording duration: ${_recordingDurations[index]}s");
+        }
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Recording started for ${_allInspections[index].name}...'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      
+      print("✅ Recording started successfully");
+    } else {
+      print("❌ Permission denied");
+    }
+  } catch (e) {
+    print('❌ Recording failed: $e');
+    // Reset state if recording fails
     setState(() {
       _isRecording[index] = false;
       _recordingDurations[index] = 0;
-
-      // Add the voice message to the list
-      _voiceMessages[index].add(VoiceMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        duration: duration,
-        timestamp: DateTime.now(),
-        filePath: 'voice_${index}_${DateTime.now().millisecondsSinceEpoch}.m4a', // Simulated file path
-      ));
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Voice message saved (${duration}s) for ${inspections[index]}'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    _recordingTimers[index]?.cancel();
+    _recordingTimers[index] = null;
   }
+}
+void _stopRecording(int index) async {
+  print("🔴 _stopRecording called for index: $index");
+  
+  if (index < 0 || index >= _isRecording.length) {
+    print("❌ Invalid index bounds");
+    return;
+  }
+  
+  print("🔴 Current recording state: ${_isRecording[index]}");
+  print("🔴 Timer exists: ${_recordingTimers[index] != null}");
+  
+  _recordingTimers[index]?.cancel();
+  _recordingTimers[index] = null;
 
-  void _toggleRecording(int index) {
-    if (_isRecording[index]) {
-      _stopRecording(index);
+  final duration = _recordingDurations[index];
+  print("🔴 Recording duration: ${duration}s");
+
+  try {
+    print("🔴 Attempting to stop recorder...");
+    
+    // Check if recorder is actually recording
+    bool isRecording = await _audioRecorders[index].isRecording();
+    print("🔴 Recorder isRecording: $isRecording");
+    
+    if (isRecording) {
+      String? recordedPath = await _audioRecorders[index].stop();
+      print("🔴 Stop recording returned path: $recordedPath");
+
+      if (recordedPath != null && recordedPath.isNotEmpty) {
+        setState(() {
+          _isRecording[index] = false;
+          _recordingDurations[index] = 0;
+
+          _voiceMessages[index].add(VoiceMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            duration: duration,
+            timestamp: DateTime.now(),
+            filePath: recordedPath,
+          ));
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Voice message saved (${duration}s) for ${_allInspections[index].name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        print("✅ Voice message recorded at: $recordedPath");
+      } else {
+        print("❌ Recording failed - no file path returned");
+        setState(() {
+          _isRecording[index] = false;
+          _recordingDurations[index] = 0;
+        });
+      }
     } else {
-      _startRecording(index);
+      print("❌ Recorder was not recording");
+      setState(() {
+        _isRecording[index] = false;
+        _recordingDurations[index] = 0;
+      });
     }
+  } catch (e) {
+    print('❌ Error stopping recording: $e');
+    setState(() {
+      _isRecording[index] = false;
+      _recordingDurations[index] = 0;
+    });
   }
+}
+Color? _getRecordingButtonColor(int index) {
+  if (_isRecording[index]) {
+    return Colors.red[600];
+  } else if (_voiceMessages[index].isNotEmpty) {
+    return Colors.green[600];
+  } else {
+    return Colors.grey[600];
+  }
+}
+Color? _getBackgroundColor(int index) {
+  if (index >= _isRecording.length) return Colors.grey[300];
+  
+  if (_isRecording[index]) {
+    return Colors.red[100];
+  } else if (index < _voiceMessages.length && _voiceMessages[index].isNotEmpty) {
+    return Colors.green[100];
+  } else {
+    return Colors.grey[300];
+  }
+}
+
+// Optional: Add this method for pulsing animation while recording
+Widget _buildPulsingBorder(int index) {
+  return AnimatedContainer(
+    duration: const Duration(milliseconds: 500),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: _isRecording.length > index && _isRecording[index]
+            ? Colors.red.withOpacity(0.8)
+            : Colors.transparent,
+        width: 2,
+      ),
+    ),
+  );
+}
+ void _toggleRecording(int index) {
+  print("🟡 _toggleRecording called for index: $index");
+  print("🟡 _isRecording array: $_isRecording");
+  print("🟡 Current _isRecording[$index]: ${_isRecording[index]}");
+  
+  if (index < 0 || index >= _isRecording.length) {
+    print('❌ Invalid recording index: $index');
+    return;
+  }
+
+  if (_isRecording[index]) {
+    print("🟡 Calling _stopRecording");
+    _stopRecording(index);
+  } else {
+    print("🟡 Calling _startRecording");
+    _startRecording(index);
+  }
+}
 
   void _playVoiceMessage(VoiceMessage voiceMessage, int inspectionIndex) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Playing voice message (${voiceMessage.duration}s) for ${inspections[inspectionIndex]}'),
+        content: Text('Playing voice message (${voiceMessage.duration}s) for ${_allInspections[inspectionIndex].name}'),
         backgroundColor: Colors.blue,
       ),
     );
@@ -516,7 +655,7 @@ bool _showSelectedInspections = false;
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Customer Remarks - ${inspections[index]}',
+                  'Customer Remarks - ${_allInspections[index].name}',
                   style: const TextStyle(fontSize: 16),
                 ),
               ),
@@ -563,7 +702,7 @@ bool _showSelectedInspections = false;
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Customer remarks saved for ${inspections[index]}'),
+                    content: Text('Customer remarks saved for ${_allInspections[index].name}'),
                     backgroundColor: Colors.green,
                   ),
                 );
@@ -1254,7 +1393,7 @@ bool _showSelectedInspections = false;
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add Photo for ${inspections[index]}'),
+          title: Text('Add Photo for ${_allInspections[index].name}'),
           content: const Text('Choose image source:'),
           actions: <Widget>[
             TextButton(
@@ -1300,7 +1439,7 @@ bool _showSelectedInspections = false;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Image added to ${inspections[index]}'),
+            content: Text('Image added to ${_allInspections[index].name}'),
             backgroundColor: Colors.green,
           ),
         );
@@ -1427,8 +1566,9 @@ bool _showSelectedInspections = false;
   @override
 initState(){
   super.initState();
-  fetchAllInspections();
+  // fetchAllInspections();
   initializeInspections();
+    _selectedInspections = List<bool>.filled(_allInspections.length, false);
 }
 //  List fetchedInspections
 
@@ -1444,10 +1584,13 @@ initState(){
     for (var controller in _customerRemarksControllers) {
       controller.dispose();
     }
+    for (var recorder in _audioRecorders) {
+      recorder.dispose();
+    }
     // Cancel any running timers
     for (var timer in _recordingTimers) {
-      timer?.cancel();
-    }
+    timer?.cancel();
+  }
     super.dispose();
   }
 
@@ -1596,7 +1739,7 @@ body: SingleChildScrollView(
             
             // Selected Inspections List
             ...List.generate(
-              inspections.length,
+              _allInspections.length,
               (index) {
                 if (_selectedInspections.length <= index || !_selectedInspections[index]) {
                   return const SizedBox.shrink();
@@ -1649,7 +1792,7 @@ body: SingleChildScrollView(
                             // Inspection title
                             Expanded(
                               child: Text(
-                                inspections[index],
+                                _allInspections[index].name,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16,
@@ -1714,82 +1857,84 @@ body: SingleChildScrollView(
 
                                 // Voice button with recording indicator
                                 Stack(
-                                  children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: _isRecording.length > index && _isRecording[index]
-                                            ? Colors.red[100]
-                                            : _voiceMessages.length > index && _voiceMessages[index].isNotEmpty
-                                            ? Colors.green[100]
-                                            : Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: IconButton(
-                                        icon: Icon(
-                                          _isRecording.length > index && _isRecording[index] ? Icons.stop : Icons.mic,
-                                          size: 20,
-                                        ),
-                                        color: _isRecording.length > index && _isRecording[index]
-                                            ? Colors.red[600]
-                                            : _voiceMessages.length > index && _voiceMessages[index].isNotEmpty
-                                            ? Colors.green[600]
-                                            : Colors.grey[600],
-                                        onPressed: () => _toggleRecording(index),
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                    ),
-                                    if (_voiceMessages.length > index && _voiceMessages[index].isNotEmpty)
-                                      Positioned(
-                                        right: 0,
-                                        top: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(2),
-                                          decoration: const BoxDecoration(
-                                            color: Colors.green,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          constraints: const BoxConstraints(
-                                            minWidth: 16,
-                                            minHeight: 16,
-                                          ),
-                                          child: Text(
-                                            '${_voiceMessages[index].length}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
-                                    if (_isRecording.length > index && _isRecording[index])
-                                      Positioned(
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            '${_recordingDurations.length > index ? _recordingDurations[index] : 0}s',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-
+  children: [
+    Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: _getBackgroundColor(index),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        icon: Icon(
+          _isRecording[index] ? Icons.stop : Icons.mic,  // Simplified check
+          size: 20,
+        ),
+        color: _getRecordingButtonColor(index),
+        onPressed: () {
+          print("🔵 IconButton pressed for index: $index");
+          print("🔵 Current state: ${_isRecording[index] ? 'RECORDING' : 'NOT_RECORDING'}");
+          _toggleRecording(index);
+        },
+        padding: EdgeInsets.zero,
+      ),
+    ),
+    
+    // Make sure overlays don't block button presses
+    if (_voiceMessages.length > index && _voiceMessages[index].isNotEmpty)
+      Positioned(
+        right: -2,
+        top: -2,
+        child: IgnorePointer(  // ADD THIS
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+            constraints: const BoxConstraints(
+              minWidth: 16,
+              minHeight: 16,
+            ),
+            child: Text(
+              '${_voiceMessages[index].length}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    
+    if (_isRecording[index])
+      Positioned(
+        bottom: -2,
+        left: 0,
+        right: 0,
+        child: IgnorePointer(  // ADD THIS
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${_recordingDurations[index]}s',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+  ],
+),
                                 const SizedBox(width: 8),
 
                                 // Customer remarks button
@@ -1935,9 +2080,10 @@ body: SingleChildScrollView(
                                           children: [
                                             GestureDetector(
                                               onTap: () => _viewFullScreenImage(
-                                                _images[index][imageIndex],
-                                                '${inspections[index]} - Photo ${imageIndex + 1}',
-                                              ),
+                                    _images[index][imageIndex],
+                                    // ✅ FIXED: Use API name for image title
+                                    '${_allInspections[index].name} - Photo ${imageIndex + 1}',
+                                  ),
                                               child: Container(
                                                 width: 100,
                                                 height: 100,
@@ -2022,13 +2168,13 @@ body: SingleChildScrollView(
                                               style: const TextStyle(fontSize: 12),
                                             ),
                                           ),
-                                          IconButton(
-                                            icon: const Icon(Icons.play_arrow, size: 16),
-                                            color: Colors.green[600],
-                                            onPressed: () => _playVoiceMessage(message, index),
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                                          ),
+                                          // IconButton(
+                                          //   icon: const Icon(Icons.play_arrow, size: 16),
+                                          //   color: Colors.green[600],
+                                          //   onPressed: () => _playVoiceMessage(message, index),
+                                          //   padding: EdgeInsets.zero,
+                                          //   constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                          // ),
                                           IconButton(
                                             icon: const Icon(Icons.delete, size: 16),
                                             color: Colors.red[600],
@@ -2453,7 +2599,7 @@ Widget _buildStatusChip(String label, int count, Color color) {
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 8,
               color: color,
             ),
           ),
@@ -2532,7 +2678,7 @@ Widget _buildInspectionCard(int index) {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  inspections[index],
+                  _allInspections[index].name,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
@@ -2616,14 +2762,14 @@ Future<String?> _getSessionId() async {
 // Fetch all inspections from API
 Future<List<InspectionItem>> fetchAllInspections() async {
   String? sessionId = await _getSessionId();
-
+  
   if (sessionId == null) {
     throw Exception('No session ID found. Please login first.');
   }
 
   try {
     print('🔍 Fetching inspections from API...');
-
+    
     var response = await http.get(
       Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.get_all_inspection'),
       headers: {
@@ -2637,27 +2783,27 @@ Future<List<InspectionItem>> fetchAllInspections() async {
 
     if (response.statusCode == 200) {
       Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-
-      List<dynamic> inspectionData;
-
-      // ✅ Correct response parsing
-      if (jsonResponse.containsKey('message') &&
+      
+      // Parse the specific structure from your API response
+      if (jsonResponse.containsKey('message') && 
+          jsonResponse['message']['status'] == 'success' &&
           jsonResponse['message'].containsKey('data')) {
-        inspectionData = jsonResponse['message']['data'] as List<dynamic>;
+        
+        List<dynamic> inspectionData = jsonResponse['message']['data'] as List<dynamic>;
+        
+        List<InspectionItem> inspections = inspectionData
+            .map((item) => InspectionItem.fromJson(item as Map<String, dynamic>))
+            .toList();
+        
+        print('✅ Fetched ${inspections.length} inspections:');
+        for (var inspection in inspections) {
+          print('  - ${inspection.name}');
+        }
+        
+        return inspections;
       } else {
         throw Exception('Invalid API response structure');
       }
-
-      List<InspectionItem> inspections = inspectionData
-          .map((item) => InspectionItem.fromJson(item as Map<String, dynamic>))
-          .toList();
-
-      print('✅ Fetched ${inspections.length} inspections:');
-      for (var inspection in inspections) {
-        print('  - ${inspection.name}');
-      }
-
-      return inspections;
     } else {
       throw Exception('Failed to fetch inspections: ${response.statusCode} - ${response.body}');
     }
@@ -2667,7 +2813,6 @@ Future<List<InspectionItem>> fetchAllInspections() async {
   }
 }
 
-
 // Initialize inspections when the screen loads
 Future<void> initializeInspections() async {
   try {
@@ -2676,24 +2821,33 @@ Future<void> initializeInspections() async {
     });
 
     List<InspectionItem> fetchedInspections = await fetchAllInspections();
-
+    
     setState(() {
-      _allInspections = fetchedInspections; // ✅ Save the API data
-      _tempSelection = List<bool>.filled(_allInspections.length, false); // ✅ Selection list
-      _IsLoading = false;
+      // Update your inspection lists with API data
+      _allInspections = fetchedInspections;
+      
+      // Clear and refill the final lists instead of reassigning
+      _inspectionStatus.clear();
+      _inspectionStatus.addAll(List<int>.filled(fetchedInspections.length, 0));
+      
+      // Initialize _selectedInspections if it's not final
+      _selectedInspections = List<bool>.filled(fetchedInspections.length, false);
+      
+      _isLoading = false;
     });
-
-    print('🎉 Inspections initialized successfully');
+    
+    print('🎉 Inspections initialized successfully with ${fetchedInspections.length} items');
   } catch (e) {
     setState(() {
-      _IsLoading = false;
+      _isLoading = false;
     });
     showError('Failed to load inspections: $e');
   }
 }
 
-
 // Export report using API-fetched inspection names
+// Fixed export method to match your exact backend format
+// Fixed export method to match your exact backend format
 Future<void> exportReport() async {
   setState(() {
     _isLoading = true;
@@ -2709,110 +2863,162 @@ Future<void> exportReport() async {
     return;
   }
 
-  // Status mapping: 0 = not selected, 1 = Satisfied, 2 = Immediate Attention, 3 = Attention in Future
   List<String> statusNames = ['', 'Satisfied', 'Immediate Attention', 'Attention in Future'];
   
-  // Get selected inspections using API-fetched names
+  // Build selected inspections using API-fetched names
   List<Map<String, dynamic>> selectedInspections = [];
-  for (int i = 0; i < inspections.length; i++) {
-    int statusIndex = _inspectionStatus[i];
-    if (statusIndex > 0 && statusIndex < statusNames.length) {
+  for (int i = 0; i < _allInspections.length; i++) {
+    if (_selectedInspections[i] && _inspectionStatus[i] > 0 && _inspectionStatus[i] < statusNames.length) {
       selectedInspections.add({
-        "inspection_type": inspections[i], // Now uses API-fetched names
-        "status": statusNames[statusIndex]
+        "inspection_type": _allInspections[i].name, // ✅ API-fetched name
+        "status": statusNames[_inspectionStatus[i]]
       });
     }
+  }
+
+  print('🔍 Selected inspections data:');
+  for (var inspection in selectedInspections) {
+    print('  inspection_type: "${inspection['inspection_type']}"');
+    print('  status: "${inspection['status']}"');
   }
 
   if (selectedInspections.isEmpty) {
     setState(() {
       _isLoading = false;
     });
-    showError('Please select at least one inspection status before exporting.');
+    showError('Please select at least one inspection and set its status before exporting.');
     return;
   }
 
   String formattedDate = DateTime.now().toIso8601String().split('T').first;
   
-  List<String> customerRemarks = _customerRemarksControllers
-      .where((controller) => controller.text.isNotEmpty)
-      .map((controller) => controller.text)
-      .toList();
-
-  // Create the inspection table to match the exact Postman format
-  String formattedInspectionTable = selectedInspections.map((inspection) {
-    return '{"inspection_type": "${inspection['inspection_type']}", "status": "${inspection['status']}"}';
-  }).join(',\n ');
-  formattedInspectionTable = '[$formattedInspectionTable]';
+  // Collect customer remarks from selected inspections only
+  List<String> customerRemarks = [];
+  for (int i = 0; i < _allInspections.length; i++) {
+    if (_selectedInspections[i] && 
+        _customerRemarksControllers.length > i && 
+        _customerRemarksControllers[i].text.isNotEmpty) {
+      customerRemarks.add(_customerRemarksControllers[i].text);
+    }
+  }
 
   var request = http.MultipartRequest(
     'POST',
     Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.create_inspection'),
   );
 
-  request.headers.addAll({
-    'Cookie': 'sid=$sessionId',
-    'Accept': 'application/json',
-    'User-Agent': 'Flutter App',
-  });
+  // ✅ FIXED: Create inspection table in EXACT format as your example
+  String formattedInspectionTable = selectedInspections.map((inspection) {
+    return '{"inspection_type": "${inspection['inspection_type']}", "status": "${inspection['status']}"}';
+  }).join(',\n  '); // Note the exact spacing: comma + newline + 2 spaces
+  formattedInspectionTable = '[$formattedInspectionTable]';
 
+  // ✅ FIXED: Use exact field format as your example
   request.fields.addAll({
     'repair_order_id': widget.orderId,
     'inspection_date': formattedDate,
     'remarks': customerRemarks.join(', '),
-    'Inspection Table': formattedInspectionTable,
+    'Inspection Table': formattedInspectionTable, // Exact format with newlines and spacing
   });
 
-  // Add images and voice messages (same as before)
-  int imagesAdded = 0;
-  if (allImages != null && allImages.isNotEmpty) {
-    for (int i = 0; i < allImages.length; i++) {
-      File image = allImages[i];
-      if (await image.exists()) {
-        try {
-          request.files.add(await http.MultipartFile.fromPath('images', image.path));
-          imagesAdded++;
-          print('✅ Added image ${i + 1}: ${image.path}');
-        } catch (e) {
-          print('❌ Error adding image $i: $e');
-        }
-      }
-    }
-  }
+  // Add authentication headers
+  request.headers.addAll({
+    'Cookie': 'sid=$sessionId',
+    'Accept': 'application/json',
+  });
 
-  // Voice messages processing
-  int voiceMessagesAdded = 0;
-  if (_voiceMessages != null && _voiceMessages.isNotEmpty) {
-    for (var voiceList in _voiceMessages) {
-      for (var voiceMessage in voiceList) {
-        if (voiceMessage.filePath != null && voiceMessage.filePath.isNotEmpty) {
-          String finalPath = await _resolveVoiceFilePath(voiceMessage.filePath);
-          File voiceFile = File(finalPath);
-          if (await voiceFile.exists()) {
-            try {
-              request.files.add(await http.MultipartFile.fromPath('voiceMessages', finalPath));
-              voiceMessagesAdded++;
-              print('✅ Added voice message: $finalPath');
-            } catch (e) {
-              print('❌ Error adding voice message: $e');
-            }
+  // ✅ FIXED: Add images with 'photo' field name (not 'images')
+  int imagesAdded = 0;
+  for (int i = 0; i < _allInspections.length; i++) {
+    if (_selectedInspections[i] && _images.length > i && _images[i].isNotEmpty) {
+      for (int j = 0; j < _images[i].length; j++) {
+        File image = _images[i][j];
+        if (await image.exists()) {
+          try {
+            // ✅ FIXED: Use 'photo' field name instead of 'images'
+            request.files.add(await http.MultipartFile.fromPath('photo', image.path));
+            imagesAdded++;
+            print('✅ Added photo from ${_allInspections[i].name}: ${image.path}');
+          } catch (e) {
+            print('❌ Error adding photo: $e');
           }
         }
       }
     }
   }
 
-  print('=== 📤 FINAL REQUEST DEBUG ===');
-  print('🔗 URL: ${request.url}');
-  print('🔑 Session ID: $sessionId');
-  print('📋 Inspection Table (API-based):');
+  // ✅ FIXED: Add voice messages with 'audio' field name (already correct)
+  int audioAdded = 0;
+  for (int i = 0; i < _allInspections.length; i++) {
+  print("=== Inspection $i: ${_allInspections[i].name} ===");
+  print("_voiceMessages.length: ${_voiceMessages.length}");
+  print("_selectedInspections[$i]: ${_selectedInspections[i]}");
+  print("_voiceMessages[$i].length: ${_voiceMessages[i].length}");
+  print("_voiceMessages[$i].isNotEmpty: ${_voiceMessages[i].isNotEmpty}");
+  
+  if (_selectedInspections[i] && _voiceMessages.length > i && _voiceMessages[i].isNotEmpty) {
+    print("✅ Passed first condition check");
+    
+    for (var voiceMessage in _voiceMessages[i]) {
+      print("Processing voice message: ${voiceMessage.id}");
+      print("FilePath: '${voiceMessage.filePath}'");
+      print("FilePath.isNotEmpty: ${voiceMessage.filePath.isNotEmpty}");
+      
+      if (voiceMessage.filePath.isNotEmpty) {
+        print("✅ FilePath is not empty");
+        
+        String finalPath = await _resolveVoiceFilePath(voiceMessage.filePath);
+        print("Final resolved path: '$finalPath'");
+        
+        File voiceFile = File(finalPath);
+        bool fileExists = await voiceFile.exists();
+        print("File exists: $fileExists");
+        
+        if (fileExists) {
+          print("✅ File exists, entering try block");
+          try {
+            print("=======Starts Here====");
+            request.files.add(await http.MultipartFile.fromPath('audio', finalPath));
+            audioAdded++;
+            print('✅ Added audio from ${_allInspections[i].name}: $finalPath');
+          } catch (e) {
+            print('❌ Error adding audio: $e');
+          }
+        } else {
+          print("❌ File does not exist at: $finalPath");
+        }
+      } else {
+        print("❌ FilePath is empty");
+      }
+    }
+  } else {
+    print("❌ Failed first condition check");
+  }
+}
+
+  print('📤 Final Request (matching your example format):');
+  print('request.fields.addAll({');
+  request.fields.forEach((key, value) {
+    print("  '$key': '$value',");
+  });
+  print('});');
+  
+  print('Files:');
+  for (var file in request.files) {
+    print("request.files.add(await http.MultipartFile.fromPath('${file.field}', '${file.filename}'));");
+  }
+  
+  print('📊 Summary:');
+  print('  Photos: $imagesAdded (using "photo" field)');
+  print('  Audio: $audioAdded (using "audio" field)');
+  print('  Inspections: ${selectedInspections.length}');
+  print('  Customer Remarks: ${customerRemarks.length}');
+  
+  print('🔍 Inspection Table format:');
   print(formattedInspectionTable);
-  print('📝 All Fields: ${request.fields}');
-  print('📎 Files: $imagesAdded images, $voiceMessagesAdded voice messages');
-  print('✅ Selected inspections: $selectedInspections');
 
   try {
-    print('🚀 Sending request...');
+    print('🚀 Sending request in correct format...');
     http.StreamedResponse response = await request.send();
 
     setState(() {
@@ -2820,71 +3026,154 @@ Future<void> exportReport() async {
     });
 
     String responseBody = await response.stream.bytesToString();
-    
     print('📥 Response Status: ${response.statusCode}');
     print('📥 Response Body: $responseBody');
 
     if (response.statusCode == 200) {
-      print('🎉 SUCCESS! Report exported with API-based inspection names');
+      print('🎉 SUCCESS! Data exported in correct format');
       Navigator.of(context).pop();
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text('Report exported successfully!\nInspections: ${selectedInspections.length}, Images: $imagesAdded, Voice: $voiceMessagesAdded'),
-              ),
-            ],
-          ),
+          content: Text('Report exported successfully!\nInspections: ${selectedInspections.length}, Photos: $imagesAdded, Audio: $audioAdded'),
           backgroundColor: Colors.green[600],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
           duration: Duration(seconds: 4),
         ),
       );
     } else {
-      print('❌ API Error: ${response.statusCode}');
-      showError('API Error: ${response.statusCode}\nResponse: $responseBody');
+      print('❌ Export failed: ${response.statusCode}');
+      showError('Export failed: ${response.statusCode}\n$responseBody');
     }
   } catch (e) {
-    print('💥 Exception: $e');
+    print('💥 Export Exception: $e');
     setState(() {
       _isLoading = false;
     });
-    showError('Network Error: ${e.toString()}');
+    showError('Export Error: ${e.toString()}');
   }
 }
 
-// Helper method to resolve voice file paths (same as before)
-Future<String> _resolveVoiceFilePath(String originalPath) async {
-  if (originalPath.startsWith('/')) {
-    return originalPath;
+// Helper method for voice file path resolution (same as before)
+Future<String> _resolveVoiceFilePath(String filePath) async {
+  // Check if it's already a full path
+  if (filePath.startsWith('/')) {
+    // It's already a full path, just return it
+    return filePath;
   }
   
-  List<Directory> directoriesToTry = [];
+  // If it's just a filename, resolve it
+  Directory appDocDir = await getApplicationDocumentsDirectory();
+  String fullPath = '${appDocDir.path}/$filePath';
+  return fullPath;
+}
+
+// Debug method to test with your exact format
+Future<void> testExactFormat() async {
+  String? sessionId = await _getSessionId();
+  if (sessionId == null) return;
   
+  // Test with exact format from your example
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('https://garage.tbo365.cloud/api/method/garage.garage.auth.create_inspection'),
+  );
+
+  request.fields.addAll({
+    'repair_order_id': widget.orderId,
+    'inspection_date': '2025-06-16',
+    'remarks': 'Test remarks',
+    'Inspection Table': '[{"inspection_type": "Battery Inspection", "status": "Immediate Attention"},\n  {"inspection_type": "Tier Inspection", "status": "Satisfied"}]'
+  });
+
+  request.headers.addAll({
+    'Cookie': 'sid=$sessionId',
+    'Accept': 'application/json',
+  });
+
+  print('🧪 Testing exact format from your example...');
+  print('Inspection Table: ${request.fields['Inspection Table']}');
+
   try {
-    directoriesToTry.add(await getApplicationDocumentsDirectory());
-    directoriesToTry.add(await getApplicationSupportDirectory());
-    directoriesToTry.add(await getTemporaryDirectory());
+    http.StreamedResponse response = await request.send();
+    String responseBody = await response.stream.bytesToString();
+    
+    print('📥 Test Response: ${response.statusCode}');
+    print('📥 Test Body: $responseBody');
+    
+    if (response.statusCode == 200) {
+      print('✅ Exact format test: SUCCESS!');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('✅ Exact format test successful!'), backgroundColor: Colors.green),
+      );
+    } else {
+      print('❌ Exact format test: FAILED');
+    }
   } catch (e) {
-    print('Error getting directories: $e');
+    print('💥 Test Exception: $e');
   }
-  
-  for (Directory dir in directoriesToTry) {
-    String testPath = '${dir.path}/$originalPath';
-    if (await File(testPath).exists()) {
-      return testPath;
+}
+// Helper method to resolve voice file paths (same as before)
+List<InspectionItem> getSelectedInspections() {
+  List<InspectionItem> selected = [];
+  for (int i = 0; i < _allInspections.length; i++) {
+    if (_selectedInspections[i]) {
+      selected.add(_allInspections[i]);
     }
   }
-  
-  return originalPath;
+  return selected;
 }
+
+// Helper method to get the status name for an inspection
+String getInspectionStatusName(int index) {
+  List<String> statusNames = ['Not Set', 'Satisfied', 'Immediate Attention', 'Attention in Future'];
+  if (index >= 0 && index < statusNames.length) {
+    return statusNames[index];
+  }
+  return 'Not Set';
+}
+
+// Helper method to update inspection status
+void updateInspectionStatus(int index, int statusValue) {
+  setState(() {
+    if (index >= 0 && index < _inspectionStatus.length) {
+      _inspectionStatus[index] = statusValue;
+    }
+  });
+}
+
+// Method to check if an inspection is ready for export (selected + has status)
+bool isInspectionReadyForExport(int index) {
+  return _selectedInspections[index] && _inspectionStatus[index] > 0;
+}
+
+// Get count of inspections ready for export
+int getReadyForExportCount() {
+  int count = 0;
+  for (int i = 0; i < _allInspections.length; i++) {
+    if (isInspectionReadyForExport(i)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// Future<String> _resolveVoiceFilePath(String originalPath) async {
+//   if (originalPath.startsWith('/')) {
+//     return originalPath;
+//   }
+  
+//   try {
+//     Directory appDocDir = await getApplicationDocumentsDirectory();
+//     String testPath = '${appDocDir.path}/$originalPath';
+//     if (await File(testPath).exists()) {
+//       return testPath;
+//     }
+//   } catch (e) {
+//     print('Error resolving voice path: $e');
+//   }
+  
+//   return originalPath;
+// }
 // Call this before exportReport to test your session
 // await testSessionAuth();
   void showError(String message) {
@@ -3244,26 +3533,26 @@ Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
                       const SizedBox(height: 8),
                       
                       // Status Overview
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[200]!),
-                        ),
-                        child: Row(
-                          children: [
-                            _buildStatusChip('Pass', passCount, Colors.green),
-                            const SizedBox(width: 8),
-                            _buildStatusChip('Warning', warningCount, Colors.amber),
-                            const SizedBox(width: 8),
-                            _buildStatusChip('Fail', failCount, Colors.red),
-                            const SizedBox(width: 8),
-                            _buildStatusChip('Pending', pendingCount, Colors.grey),
-                          ],
-                        ),
-                      ),
+                      // Container(
+                      //   margin: const EdgeInsets.only(bottom: 16),
+                      //   padding: const EdgeInsets.all(16),
+                      //   decoration: BoxDecoration(
+                      //     color: Colors.grey[50],
+                      //     borderRadius: BorderRadius.circular(12),
+                      //     border: Border.all(color: Colors.grey[200]!),
+                      //   ),
+                      //   child: Row(
+                      //     children: [
+                      //       _buildStatusChip('Satisfied', passCount, Colors.green),
+                      //       const SizedBox(width: 8),
+                      //       _buildStatusChip('Immediate Attention', warningCount, Colors.amber),
+                      //       const SizedBox(width: 8),
+                      //       _buildStatusChip('Attention in Future', failCount, Colors.red),
+                      //       const SizedBox(width: 8),
+                      //       _buildStatusChip('Pending', pendingCount, Colors.grey),
+                      //     ],
+                      //   ),
+                      // ),
 
                       // Individual Inspections
                       ListView.builder(
@@ -3317,7 +3606,7 @@ Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
         Expanded(
           flex: 2,
           child: ElevatedButton.icon(
-            onPressed: _isLoading ? null : exportReport,
+            onPressed: _isLoading ? null : () => exportReport(), 
             icon: _isLoading
                 ? SizedBox(
                     width: 20,

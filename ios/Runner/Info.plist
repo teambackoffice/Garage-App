@@ -4,6 +4,8 @@
 	<dict>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>NSMicrophoneUsageDescription</key>
+        <string>This app needs microphone access to record voice messages</string>
 		<key>CFBundleDisplayName</key>
 		<string>Garage App</string>
 		<key>CFBundleExecutable</key>

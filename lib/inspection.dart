@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -2851,9 +2852,14 @@ Future<void> initializeInspections() async {
 // Fixed export method to match your exact backend format
 // Fixed export method to match your exact backend format
 Future<void> exportReport() async {
-  setState(() {
-    _isLoading = true;
-  });
+  if (mounted) {
+    setState(() {
+      _isLoading = true;
+    });
+  }
+
+  // ✅ Increase delay to make loading visible (optional, for testing)
+  await Future.delayed(const Duration(milliseconds: 300));
 
   String? sessionId = await _getSessionId();
   
@@ -2984,50 +2990,151 @@ Future<void> exportReport() async {
     print('🚀 Sending request...');
     http.StreamedResponse response = await request.send();
 
-    setState(() {
-      _isLoading = false;
-    });
-
-    String responseBody = await response.stream.bytesToString();
+    String responseString = await response.stream.bytesToString();
     print('📥 Response Status: ${response.statusCode}');
-    print('📥 Response Body: $responseBody');
+    print('📥 Response Body: $responseString');
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+    
 
     if (response.statusCode == 200) {
-      print('🎉 SUCCESS! Data exported successfully');
-      
-      // Create the report link with your specific format
-      String reportLink = 'http://127.0.0.1:8000/inspections?repair_order=${widget.orderId}';
-      print('🔗 Report Link: $reportLink');
-      
-      // Send to WhatsApp
-      await _sendToWhatsApp(reportLink);
-      
-      Navigator.of(context).pop();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Report exported and sent to WhatsApp!\nInspections: ${selectedInspections.length}, Photos: $imagesAdded, Audio: $audioAdded'),
-          backgroundColor: Colors.green[600],
-          duration: Duration(seconds: 4),
-        ),
-      );
-    } else {
-      print('❌ Export failed: ${response.statusCode}');
-      showError('Export failed: ${response.statusCode}\n$responseBody');
-    }
+  print('🎉 SUCCESS! Data exported successfully');
+
+  // ✅ Read stream to string (you can only do this once)
+//  final responseString = await response.stream.bytesToString();
+final responseBody = jsonDecode(responseString);
+
+final String link = responseBody['message']['link'];
+
+if (link.isNotEmpty) {
+  await _sendToWhatsApp(link);
+} else {
+  print('❌ No link provided in response.');
+  showError('Export succeeded but no link was returned.');
+}
+
+
+  // Send to WhatsApp
+   // ✅ Only pop if there's a navigator to pop
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      // ✅ Show success dialog only if widget is still mounted
+      if (mounted) {
+        showModalBottomSheet(
+          context: context,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Success tick icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green[400]!, Colors.green[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    size: 48,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                Text(
+                  'Report Exported Successfully!',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                Text(
+                  'Your report has been sent to WhatsApp',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                
+                // Single action button
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Done'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.green[600],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Add bottom padding for safe area
+                SizedBox(height: MediaQuery.of(context).padding.bottom),
+              ],
+            ),
+          ));
+       
+        
+      }
+        
+
+
+
+} else {
+  print('❌ Export failed: ${response.statusCode}');
+
+  // ✅ Here you CANNOT use response.body because this is a StreamedResponse
+  // You need to read the stream even in error case
+  final responseString = await response.stream.bytesToString();
+
+  showError('Export failed: ${response.statusCode}\n$responseString');
+}
   } catch (e) {
-    print('💥 Export Exception: $e');
-    setState(() {
-      _isLoading = false;
-    });
-    showError('Export Error: ${e.toString()}');
+     if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+    print('❌ Error sending request: $e');
+    showError('Error sending request: $e'); 
   }
 }
 
 // Simple WhatsApp function
 Future<void> _sendToWhatsApp(String reportLink) async {
   try {
-    String phone = "+1234567890"; // PUT YOUR PHONE NUMBER HERE
+    String phone = widget.ph_number; // PUT YOUR PHONE NUMBER HERE
     String message = "🔧 Vehicle Inspection Report\n\n📋 Order: ${widget.orderId}\n📅 Date: ${DateTime.now().toLocal().toString().split(' ')[0]}\n\n🔗 View Report: $reportLink\n\nThank you for choosing our service!";
     
     String url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
@@ -3591,32 +3698,37 @@ Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
           ),
         ),
         const SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: ElevatedButton.icon(
-            onPressed: _isLoading ? null : () => exportReport(), 
-            icon: _isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(Icons.download),
-            label: Text(_isLoading ? 'Exporting...' : 'Export Report'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+       Expanded(
+  flex: 2,
+  child: ElevatedButton.icon(
+    onPressed: _isLoading ? null : () async {
+      await exportReport();
+    },
+    icon: _isLoading
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
             ),
-          ),
-        ),
+          )
+        : const Icon(Icons.download),
+    label: Text(_isLoading ? 'Exporting...' : 'Export Report'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: _isLoading ? Colors.green[700] : Colors.green[600], // ✅ Darker when loading
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      elevation: _isLoading ? 2 : 4, // ✅ Less elevation when pressed
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      // ✅ Add custom overlay color for press effect
+      overlayColor: Colors.green[800],
+    ),
+  ),
+),
+
       ],
     ),
               ),

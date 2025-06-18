@@ -45,7 +45,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'completed':
+      case 'approved':
       case 'passed':
         return Colors.green;
       case 'failed':
@@ -61,7 +61,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   IconData _getStatusIcon(String status) {
     switch (status.toLowerCase()) {
-      case 'completed':
+      case 'approved':
       case 'passed':
         return Icons.check_circle;
       case 'failed':
@@ -91,14 +91,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 fontSize: 18,
               ),
             ),
-            Text(
-              widget.orderId,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+           
           ],
         ),
         backgroundColor: Colors.indigo[700],
@@ -201,7 +194,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
-                  Icons.assignment_outlined,
+                  Icons.close_rounded,
                   size: 64,
                   color: Colors.orange[400],
                 ),
@@ -216,14 +209,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                'No inspection data available for repair order ${widget.orderId}',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
+             
             ],
           ),
         ),
@@ -338,9 +324,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                 Text(
                                   inspection.repairOrder,
                                   style: TextStyle(
-                                    color: Colors.grey[700],
+                                    color: Colors.black,
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
@@ -376,52 +362,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
                   const Spacer(),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              size: 14,
-                              color: Colors.green[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${inspectionData.items.where((item) => item.checked == true).length}',
-                              style: TextStyle(
-                                color: Colors.green[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Total: ${inspectionData.items.length}',
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  
                 ],
               ),
             ),

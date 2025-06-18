@@ -16,14 +16,17 @@ class InspectionService {
           // 'Authorization': 'Bearer $token',
         },
       );
+      print("url $response");
 
       if (response.statusCode == 200) {
+        print("response $response");
         final jsonData = json.decode(response.body);
         return InspectionResponse.fromJson(jsonData);
       } else {
         throw Exception('Failed to load inspections: ${response.statusCode}');
       }
     } catch (e) {
+      print("Error fetching inspections: $e");
       throw Exception('Error fetching inspections: $e');
     }
   }

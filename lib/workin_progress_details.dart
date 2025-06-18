@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:garage_app/inspection.dart';
+import 'package:garage_app/view_inspection/view_inspection.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -207,6 +208,39 @@ class _WorkInProgressState extends State<WorkInProgress> {
                         ),
                       );
                     }, child: Text('Add Inspection',style: TextStyle(fontWeight: FontWeight.bold),)),
+              ),
+              SizedBox(height: 10,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    // width: width * 0.4,
+                    // height: height * 0.06,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.orange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        textStyle: TextStyle(fontSize: width * 0.028),
+                      ),
+                      onPressed: () {
+                       
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InspectionScreen(orderId : orderId),
+                          ),
+                        );
+                        
+                        // For now, showing a placeholder message
+                        
+                      },
+                      child: Text('View Inspection', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
               if (_error != null) ...[
                 SizedBox(height: height * 0.03),

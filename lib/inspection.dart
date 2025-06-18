@@ -3702,6 +3702,7 @@ Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
   flex: 2,
   child: ElevatedButton.icon(
     onPressed: _isLoading ? null : () async {
+      // ✅ Add async/await here to properly handle the loading state
       await exportReport();
     },
     icon: _isLoading
@@ -3716,19 +3717,16 @@ Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
         : const Icon(Icons.download),
     label: Text(_isLoading ? 'Exporting...' : 'Export Report'),
     style: ElevatedButton.styleFrom(
-      backgroundColor: _isLoading ? Colors.green[700] : Colors.green[600], // ✅ Darker when loading
+      backgroundColor: Colors.green[600],
       foregroundColor: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 16),
-      elevation: _isLoading ? 2 : 4, // ✅ Less elevation when pressed
+      elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      // ✅ Add custom overlay color for press effect
-      overlayColor: Colors.green[800],
     ),
   ),
 ),
-
       ],
     ),
               ),

@@ -721,11 +721,41 @@ Widget _buildPulsingBorder(int index) {
     );
   }
 
+  
+
   // Show Services Management Dialog
   void _showServicesDialog() {
     TextEditingController serviceNameController = TextEditingController();
     TextEditingController serviceCostController = TextEditingController();
     TextEditingController serviceTimeController = TextEditingController();
+    TextEditingController inspectionTypeController = TextEditingController();
+
+    
+
+    void _showDropdown() async {
+  final String? selected = await showModalBottomSheet<String>(
+    context: context,
+    builder: (context) {
+      return ListView(
+        children: _allInspections.map((InspectionItem type) {
+          return ListTile(
+            title: Text(type.name), // Assuming InspectionItem has 'name' property
+            onTap: () {
+              Navigator.pop(context, type.name); // Pass the name as result
+            },
+          );
+        }).toList(),
+      );
+    },
+  );
+
+  if (selected != null) {
+    setState(() {
+      inspectionTypeController.text = selected;
+    });
+  }
+}
+
 
     showDialog(
       context: context,
@@ -748,12 +778,12 @@ Widget _buildPulsingBorder(int index) {
                   children: [
                     // Add new service section
                    Container(
-  padding: const EdgeInsets.all(12),
-  decoration: BoxDecoration(
-    color: Colors.green[50],
-    borderRadius: BorderRadius.circular(8),
-    border: Border.all(color: Colors.green[200]!),
-  ),
+        padding: const EdgeInsets.all(12),
+         decoration: BoxDecoration(
+           color: Colors.green[50],
+          borderRadius: BorderRadius.circular(8),
+         border: Border.all(color: Colors.green[200]!),
+        ),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -772,13 +802,16 @@ Widget _buildPulsingBorder(int index) {
       ),
       const SizedBox(height: 8),
       TextField(
-        // controller: inspectionTypeController,
-        decoration: const InputDecoration(
-          hintText: 'Inspection type',
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        ),
+      controller: inspectionTypeController,
+      readOnly: true, // Prevent keyboard from showing
+      onTap: _showDropdown,
+      decoration: const InputDecoration(
+        hintText: 'Inspection type',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        suffixIcon: Icon(Icons.arrow_drop_down), // Dropdown indicator
       ),
+    ),
       const SizedBox(height: 8),
       Row(
         children: [
@@ -817,7 +850,7 @@ Widget _buildPulsingBorder(int index) {
                   name: serviceNameController.text,
                   estimatedTime: serviceTimeController.text.isEmpty ? '1 hour' : serviceTimeController.text,
                   cost: double.tryParse(serviceCostController.text) ?? 0.0,
-                  // inspectionType: inspectionTypeController.text,
+                  inspectionType: inspectionTypeController.text,
                 ));
 
                 serviceItems.add({
@@ -825,14 +858,14 @@ Widget _buildPulsingBorder(int index) {
                   'qty': 1,
                   'rate': double.tryParse(serviceCostController.text) ?? 0.0,
                   'estimated_time': serviceTimeController.text.isEmpty ? '1 hour' : serviceTimeController.text,
-                  // 'inspection_type': inspectionTypeController.text,
+                  'inspection_type': inspectionTypeController.text,
                 });
               });
 
               serviceNameController.clear();
               serviceCostController.clear();
               serviceTimeController.clear();
-              // inspectionTypeController.clear();
+              inspectionTypeController.clear();
 
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Service added successfully!')),
@@ -884,7 +917,17 @@ Widget _buildPulsingBorder(int index) {
                                 child: Icon(Icons.build, color: Colors.white, size: 20),
                               ),
                               title: Text(service.name),
-                              subtitle: Text('Time: ${service.estimatedTime} • Cost: \$${service.cost.toStringAsFixed(2)}'),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${service.inspectionType}'),
+                                  SizedBox(height: 1,),
+                                  Text('Time: ${service.estimatedTime}'),
+                                  SizedBox(height: 1,),
+                                  Text('Cost: \$${service.cost.toStringAsFixed(2)}'),
+                                  
+                                ],
+                              ),
                               trailing: PopupMenuButton(
                                 itemBuilder: (context) => [
                                   PopupMenuItem(
@@ -928,7 +971,12 @@ Widget _buildPulsingBorder(int index) {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    setState(() {
+      _globalServices.clear();
+    });
+                  
+                   Navigator.of(context).pop();},
                   child: const Text('Close'),
                 ),
                 ElevatedButton(
@@ -3771,11 +3819,13 @@ class ServiceItem {
   final String name;
   final String estimatedTime;
   final double cost;
+  final String inspectionType;
 
   ServiceItem({
     required this.name,
     required this.estimatedTime,
     required this.cost,
+    required this.inspectionType,
   });
 }
 

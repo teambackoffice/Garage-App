@@ -255,12 +255,9 @@ class _InProgressRepairOrdersPageState
     final dynamic grandTotalRaw = order['grand_total'] ?? order['total_amount'] ?? order['total'] ?? 0;
     final double grandTotal = double.tryParse(grandTotalRaw.toString()) ?? 0.0;
     final List<dynamic> services = order['service_items'] ?? [];
-    final List serviceNames = services.map((service) => service['item_name'] ?? '').toList();
-    final String servicesString = serviceNames.join(', ');
+    
     final List<dynamic> parts = order['parts_items'] ?? [];
-    final List partNames = parts.map((part) => part['item_name'] ?? '').toList();
-    final String partsString = partNames.join(', ');
-
+    
     // Responsive font sizes and padding
     final double fontSizeTitle = screenWidth < 400 ? 14 : 16;
     final double fontSizeBody = screenWidth < 400 ? 12 : 14;
@@ -276,7 +273,7 @@ class _InProgressRepairOrdersPageState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>  WorkInProgress( services : servicesString, parts : partsString,phnumber : mobile),
+              builder: (context) =>  WorkInProgress( services : services, parts : parts,phnumber : mobile),
               settings: RouteSettings(arguments: orderName),
             ),
           );

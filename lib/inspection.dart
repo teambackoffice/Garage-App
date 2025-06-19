@@ -732,7 +732,8 @@ Widget _buildPulsingBorder(int index) {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            return AlertDialog(
+            return 
+            AlertDialog(
               title: const Row(
                 children: [
                   Icon(Icons.build, color: Color(0xFF4CAF50)),
@@ -746,95 +747,107 @@ Widget _buildPulsingBorder(int index) {
                 child: Column(
                   children: [
                     // Add new service section
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Add New Service',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: serviceNameController,
-                            decoration: const InputDecoration(
-                              hintText: 'Service name',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: serviceCostController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Cost',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: serviceTimeController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Time (e.g., 1 hour)',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                if (serviceNameController.text.isNotEmpty) {
-                                  setStateDialog(() {
-                                    _globalServices.add(ServiceItem(
-                                      name: serviceNameController.text,
-                                      estimatedTime: serviceTimeController.text.isEmpty ? '1 hour' : serviceTimeController.text,
-                                      cost: double.tryParse(serviceCostController.text) ?? 0.0,
-                                    ));
+                   Container(
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.green[50],
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(color: Colors.green[200]!),
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Add New Service',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 8),
+      TextField(
+        controller: serviceNameController,
+        decoration: const InputDecoration(
+          hintText: 'Service name',
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        ),
+      ),
+      const SizedBox(height: 8),
+      TextField(
+        // controller: inspectionTypeController,
+        decoration: const InputDecoration(
+          hintText: 'Inspection type',
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: serviceCostController,
+              decoration: const InputDecoration(
+                hintText: 'Cost',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: serviceTimeController,
+              decoration: const InputDecoration(
+                hintText: 'Time (e.g 1 hour)',
+                hintStyle: TextStyle(fontSize: 12),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Center(
+        child: ElevatedButton(
+          onPressed: () {
+            if (serviceNameController.text.isNotEmpty) {
+              setStateDialog(() {
+                _globalServices.add(ServiceItem(
+                  name: serviceNameController.text,
+                  estimatedTime: serviceTimeController.text.isEmpty ? '1 hour' : serviceTimeController.text,
+                  cost: double.tryParse(serviceCostController.text) ?? 0.0,
+                  // inspectionType: inspectionTypeController.text,
+                ));
 
-                                    serviceItems.add({
-                                      'item_name': serviceNameController.text,
-                                      'qty': 1,
-                                      'rate': double.tryParse(serviceCostController.text) ?? 0.0,
-                                      'estimated_time': serviceTimeController.text.isEmpty ? '1 hour' : serviceTimeController.text,
-                                    });
-                                  });
+                serviceItems.add({
+                  'item_name': serviceNameController.text,
+                  'qty': 1,
+                  'rate': double.tryParse(serviceCostController.text) ?? 0.0,
+                  'estimated_time': serviceTimeController.text.isEmpty ? '1 hour' : serviceTimeController.text,
+                  // 'inspection_type': inspectionTypeController.text,
+                });
+              });
 
-                                  serviceNameController.clear();
-                                  serviceCostController.clear();
-                                  serviceTimeController.clear();
+              serviceNameController.clear();
+              serviceCostController.clear();
+              serviceTimeController.clear();
+              // inspectionTypeController.clear();
 
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Service added successfully!')),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CAF50),
-                              ),
-                              child: const Text('Add Service', style: TextStyle(color: Colors.white)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Service added successfully!')),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF4CAF50),
+          ),
+          child: const Text('Add Service', style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    ],
+  ),
+),
                     const SizedBox(height: 16),
 
                     // Services list

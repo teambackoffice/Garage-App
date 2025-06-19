@@ -1002,222 +1002,278 @@ Widget _buildPulsingBorder(int index) {
     TextEditingController partNameController = TextEditingController();
     TextEditingController partQuantityController = TextEditingController();
     TextEditingController partPriceController = TextEditingController();
+    TextEditingController inspectionTypeController = TextEditingController();
+
+     void _showDropdown() async {
+  final String? selected = await showModalBottomSheet<String>(
+    context: context,
+    builder: (context) {
+      return ListView(
+        children: _allInspections.map((InspectionItem type) {
+          return ListTile(
+            title: Text(type.name), // Assuming InspectionItem has 'name' property
+            onTap: () {
+              Navigator.pop(context, type.name); // Pass the name as result
+            },
+          );
+        }).toList(),
+      );
+    },
+  );
+
+  if (selected != null) {
+    setState(() {
+      inspectionTypeController.text = selected;
+    });
+  }
+}
+
+
+
 
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Row(
+  context: context,
+  builder: (BuildContext context) {
+    return StatefulBuilder(
+      builder: (context, setStateDialog) {
+        return Dialog(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.precision_manufacturing, color: Color(0xFF4CAF50)),
-                  SizedBox(width: 8),
-                  Text('Parts Management'),
-                ],
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 400,
-                child: Column(
-                  children: [
-                    // Add new part section
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Add New Part',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: partNameController,
-                            decoration: const InputDecoration(
-                              hintText: 'Part name/number',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: partQuantityController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Qty',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: partPriceController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Price',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                if (partNameController.text.isNotEmpty) {
-                                  setStateDialog(() {
-                                    int quantity = int.tryParse(partQuantityController.text) ?? 1;
-                                    double price = double.tryParse(partPriceController.text) ?? 0.0;
+                  // 🔰 Title
+                  const Row(
+                    children: [
+                      Icon(Icons.precision_manufacturing, color: Color(0xFF4CAF50)),
+                      SizedBox(width: 8),
+                      Text('Parts Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
 
-                                    _globalParts.add(PartItem(
-                                      name: partNameController.text,
-                                      quantity: quantity,
-                                      price: price,
-                                      inStock: true,
-                                    ));
-
-                                    partsItems.add({
-                                      'item_name': partNameController.text,
-                                      'qty': quantity,
-                                      'rate': price,
-                                    });
-                                  });
-
-                                  partNameController.clear();
-                                  partQuantityController.clear();
-                                  partPriceController.clear();
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Part added successfully!')),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CAF50),
-                              ),
-                              child: const Text('Add Part', style: TextStyle(color: Colors.white)),
-                            ),
-                          ),
-                        ],
-                      ),
+                  // 🔰 Add New Part Section
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Parts list
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Parts Inventory',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    Expanded(
-                      child: _globalParts.isEmpty
-                          ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Add New Part', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: partNameController,
+                          decoration: const InputDecoration(
+                            hintText: 'Part name',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: inspectionTypeController,
+                          readOnly: true,
+                          onTap: _showDropdown,
+                          decoration: const InputDecoration(
+                            hintText: 'Inspection type',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            suffixIcon: Icon(Icons.arrow_drop_down),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
                           children: [
-                            Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('No parts added yet', style: TextStyle(color: Colors.grey)),
+                            Expanded(
+                              child: TextField(
+                                controller: partQuantityController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Qty',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: partPriceController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Price',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
                           ],
                         ),
-                      )
-                          : ListView.builder(
-                        itemCount: _globalParts.length,
-                        itemBuilder: (context, index) {
-                          final part = _globalParts[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 2),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: part.inStock ? const Color(0xFF4CAF50) : Colors.red,
-                                child: Icon(
-                                  part.inStock ? Icons.check : Icons.warning,
-                                  color: Colors.white,
-                                  size: 20,
+                        const SizedBox(height: 8),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (partNameController.text.isNotEmpty) {
+                                setStateDialog(() {
+                                  int quantity = int.tryParse(partQuantityController.text) ?? 1;
+                                  double price = double.tryParse(partPriceController.text) ?? 0.0;
+
+                                  _globalParts.add(PartItem(
+                                    name: partNameController.text,
+                                    quantity: quantity,
+                                    price: price,
+                                    inStock: true,
+                                    inspectionType: inspectionTypeController.text,
+                                  ));
+
+                                  partsItems.add({
+                                    'item_name': partNameController.text,
+                                    'qty': quantity,
+                                    'rate': price,
+                                    'inspection_type': inspectionTypeController.text,
+                                  });
+                                });
+
+                                partNameController.clear();
+                                partQuantityController.clear();
+                                partPriceController.clear();
+                                inspectionTypeController.clear();
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Part added successfully!')),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                            ),
+                            child: const Text('Add Part', style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Parts Inventory', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 🔰 Parts List
+                  _globalParts.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text('No parts added yet', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _globalParts.length,
+                          itemBuilder: (context, index) {
+                            final part = _globalParts[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 2),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: part.inStock ? const Color(0xFF4CAF50) : Colors.red,
+                                  child: Icon(
+                                    part.inStock ? Icons.check : Icons.warning,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                title: Text(part.name),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${part.inspectionType}'),
+                                    Text('Qty: ${part.quantity}'),
+                                    Text('Price: \$${part.price.toStringAsFixed(2)}'),
+                                  ],
+                                ),
+                                trailing: PopupMenuButton(
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 16),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                      onTap: () {
+                                        // Edit logic here
+                                      },
+                                    ),
+                                    PopupMenuItem(
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.delete, size: 16, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text('Delete', style: TextStyle(color: Colors.red)),
+                                        ],
+                                      ),
+                                      onTap: () {
+                                        setStateDialog(() {
+                                          String partName = _globalParts[index].name;
+                                          _globalParts.removeAt(index);
+                                          partsItems.removeWhere((item) => item['item_name'] == partName);
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
-                              title: Text(part.name),
-                              subtitle: Text('Qty: ${part.quantity} • Price: \$${part.price.toStringAsFixed(2)}'),
-                              trailing: PopupMenuButton(
-                                itemBuilder: (context) => [
-                                  PopupMenuItem(
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.edit, size: 16),
-                                        SizedBox(width: 8),
-                                        Text('Edit'),
-                                      ],
-                                    ),
-                                    onTap: () {
-                                      // Edit part logic
-                                    },
-                                  ),
-                                  PopupMenuItem(
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.delete, size: 16, color: Colors.red),
-                                        SizedBox(width: 8),
-                                        Text('Delete', style: TextStyle(color: Colors.red)),
-                                      ],
-                                    ),
-                                    onTap: () {
-                                      setStateDialog(() {
-                                        // Remove from both lists
-                                        String partName = _globalParts[index].name;
-                                        _globalParts.removeAt(index);
-                                        partsItems.removeWhere((item) => item['item_name'] == partName);
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
+                            );
+                          },
+                        ),
+
+                  const SizedBox(height: 16),
+
+                  // 🔰 Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Close'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          setState(() {});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Parts inventory updated!')),
                           );
                         },
+                        child: const Text('Save'),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  )
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    setState(() {}); // Refresh the main page
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Parts inventory updated!')),
-                    );
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
+            ),
+          ),
         );
       },
     );
+  },
+);
+
   }
 
   // Show TecDoc Dialog
@@ -1370,7 +1426,7 @@ Widget _buildPulsingBorder(int index) {
                                                   name: item.partNumber,
                                                   quantity: 1,
                                                   price: item.price,
-                                                  inStock: true,
+                                                  inStock: true
                                                 ));
 
                                                 partsItems.add({
@@ -1574,7 +1630,13 @@ Widget _buildPulsingBorder(int index) {
                 final item = items[index];
                 return ListTile(
                   title: Text(item['item_name'] ?? 'Unknown Item'),
-                  subtitle: Text('Qty: ${item['qty']} x ₹${item['rate']}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Inspection Type: ${item['inspection_type']}'),
+                      Text('Qty: ${item['qty']} x ₹${item['rate']}'),
+                    ],
+                  ),
                   trailing: Text('₹${((item['qty'] ?? 0) * (item['rate'] ?? 0)).toStringAsFixed(2)}'),
                 );
               },
@@ -3834,12 +3896,15 @@ class PartItem {
   final int quantity;
   final double price;
   final bool inStock;
+  final String? inspectionType;
 
   PartItem({
     required this.name,
     required this.quantity,
     required this.price,
     this.inStock = true,
+     this.inspectionType,
+
   });
 }
 

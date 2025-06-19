@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:garage_app/service_parts_adding/packages.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -1078,6 +1079,7 @@ class _ServicePartAddingState extends State<ServicePartAdding> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              PackageScreen(),
               Text(
                 "Services and Parts",
                 style: TextStyle(
@@ -1150,3 +1152,4 @@ class _ServicePartAddingState extends State<ServicePartAdding> {
     );
   }
 }
+

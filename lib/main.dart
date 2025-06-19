@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
+import 'package:garage_app/controller/packagecontroller.dart';
 import 'package:garage_app/task1.dart';
+import 'package:provider/provider.dart';
 import 'bottom_nav.dart';
 import 'inspection.dart';
 import 'login_page.dart';
@@ -8,7 +10,14 @@ import 'login_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PackageController()),
+      ],
+    child: const MyApp()
+  ),);
 }
 var w;
 var h;

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:garage_app/controller/packagecontroller.dart';
+import 'package:garage_app/service_parts_adding/create_package.dart';
+
+
 import 'package:provider/provider.dart';
 
 class PackageScreen extends StatefulWidget {
@@ -53,10 +56,7 @@ class _PackageScreenState extends State<PackageScreen> {
                               color: Colors.teal,
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.close, color: Colors.grey),
-                            onPressed: () => Navigator.of(context).pop(),
-                          )
+                         CreateNewPackage()
                         ],
                       ),
                       SizedBox(height: 16),
@@ -111,3 +111,5 @@ class _PackageScreenState extends State<PackageScreen> {
     );
   }
 }
+
+

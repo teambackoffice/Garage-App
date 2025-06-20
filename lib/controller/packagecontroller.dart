@@ -6,7 +6,9 @@ import 'package:garage_app/service/get_all_package_types.dart';
 
 class PackageController extends ChangeNotifier {
   bool isLoading = false;
-  GetAllPackagesTypes? packageDetails; // ✅ Field name with capital D
+  GetAllPackagesTypes? packageDetails;
+   // ✅ Field name with capital D
+   
 
   Future<void> getPackageDetails() async {
     isLoading = true;
@@ -23,7 +25,7 @@ class PackageController extends ChangeNotifier {
   }
 
 
-   Future<bool?> createNewPackage(CreatePackagesTypes newPackage) async {
+   Future<bool?> createNewPackage( CreatePackagesTypes newPackage) async {
     isLoading = true;
     notifyListeners();
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:garage_app/controller/packagecontroller.dart';
+import 'package:garage_app/modalclass/create_package_modal.dart';
 import 'package:provider/provider.dart';
 
 class CreateNewPackage extends StatefulWidget {
@@ -259,54 +260,100 @@ class _CreateNewPackageState extends State<CreateNewPackage> {
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_packageNameController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text('Package name is required'),
-                            ],
-                          ),
-                          backgroundColor: Colors.red.shade400,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                      return;
-                    }
+                 onPressed: () async {
+  if (_packageNameController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Package name is required'),
+          ],
+        ),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+    return;
+  }
 
-                    Map<String, dynamic> packageData = {
-                      "pack_name": _packageNameController.text.trim(),
-                      "pack_type": selectedPackageType,
-                      "parts_items": partsItems,
-                      "service_items": serviceItems,
-                    };
+  // Prepare the API data model
+  final newPackage = CreatePackagesTypes(
+    packName: _packageNameController.text.trim(),
+    packType: selectedPackageType!,
+    partsItems: partsItemsll,
+    serviceItems: serviceItems,
+  );
 
-                    print(packageData);
-                    Navigator.of(context).pop();
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(Icons.check_circle_outline, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text('Package created successfully!'),
-                          ],
-                        ),
-                        backgroundColor: Colors.green.shade400,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  },
+  // Optional: Show a loading snackbar while API is processing
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+          SizedBox(width: 16),
+          Text('Creating package...'),
+        ],
+      ),
+      backgroundColor: Colors.teal,
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(minutes: 1), // Will auto dismiss when next snackbar appears
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  );
+
+  // Send API request
+  bool? result = await context.read<PackageController>().createNewPackage(newPackage);
+
+  // Close dialog
+  Navigator.of(context).pop();
+
+  // Remove loading snackbar
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+  if (result == true) {
+    // Success snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Package created successfully!'),
+          ],
+        ),
+        backgroundColor: Colors.green.shade400,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  } else {
+    // Failure snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Failed to create package. Please try again.'),
+          ],
+        ),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+},
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal.shade600,
                     foregroundColor: Colors.white,
